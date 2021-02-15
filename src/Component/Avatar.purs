@@ -1,13 +1,12 @@
 module Component.Avatar (avatar) where
 
+import CSS as CSS
 import Halogen (ComponentHTML)
-import Halogen.HTML (ClassName(..), div, text)
+import Halogen.HTML (div, text)
 import Halogen.HTML.Properties (classes)
 
-avatar :: forall action cs m. String -> ComponentHTML action cs m
-avatar name =
-  div [classes [ ClassName "rounded-circle"
-               , ClassName "avatar"
-               , ClassName "bg-secondary"
-               , ClassName "text-white" ] ]
-  [text name]
+avatar :: forall action slots m. String -> ComponentHTML action slots m
+avatar initials =
+  div
+  [classes [CSS.roundedCircle, CSS.avatar, CSS.bgSecondary, CSS.textWhite]]
+  [text initials]

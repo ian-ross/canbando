@@ -19,7 +19,7 @@ todo =
 
 inProgress :: List
 inProgress =
-  { name: "To Do"
+  { name: "In progress"
   , cards: [ { title: "Task #1" }
            , { title: "Task #2" }
            ]
