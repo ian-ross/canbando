@@ -1,8 +1,19 @@
+### PureScript ###
 # Dependencies
 .psci_modules
+.spago
 bower_components
 node_modules
 
 # Generated files
 .psci
 output
+generated-docs
+.psc-package
+.psc*
+.purs*
+.psa*
+.spago
+.cache
+dist
+prod
