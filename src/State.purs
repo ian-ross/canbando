@@ -1,12 +1,10 @@
 module State where
 
-type Card = { title :: String }
+import Component.List as List
 
-type List = { name :: String, cards :: Array Card }
+type State = { lists :: Array List.State }
 
-type State = { lists :: Array List }
-
-todo :: List
+todo :: List.State
 todo =
   { name: "To Do"
   , cards: [ { title: "Task #3" }
@@ -17,7 +15,7 @@ todo =
            ]
   }
 
-inProgress :: List
+inProgress :: List.State
 inProgress =
   { name: "In progress"
   , cards: [ { title: "Task #1" }
@@ -25,7 +23,7 @@ inProgress =
            ]
   }
 
-done :: List
+done :: List.State
 done =
   { name: "Done"
   , cards : [] }

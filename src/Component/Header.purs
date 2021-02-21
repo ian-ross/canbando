@@ -7,6 +7,7 @@ import Component.Avatar (avatar)
 import Halogen (ComponentHTML)
 import Halogen.HTML (AttrName(..), a, button, div, header_, nav, span, text)
 import Halogen.HTML.Properties (attr, class_, classes, href)
+import Halogen.HTML.Properties.ARIA as ARIA
 
 header :: forall action cs m. ComponentHTML action cs m
 header =
@@ -36,7 +37,7 @@ navbarToggler =
   button [ class_ CSS.navbarToggler
          , attr (AttrName "data-bs-toggle") "collapse"
          , attr (AttrName "data-bs-target") "#navbarCollapse"
-         , attr (AttrName "aria-controls") "navbarCollapse"
-         , attr (AttrName "aria-expanded") "false"
-         , attr (AttrName "aria-label") "Toggle navigation"]
+         , ARIA.controls "navbarCollapse"
+         , ARIA.expanded "false"
+         , ARIA.label "Toggle navigation"]
   [span [class_ CSS.navbarTogglerIcon] []]
