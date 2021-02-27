@@ -2,9 +2,9 @@ module State where
 
 import Component.List as List
 
-type State = { lists :: Array List.State }
+type State = { lists :: Array List.Input }
 
-todo :: List.State
+todo :: List.Input
 todo =
   { name: "To Do"
   , id: "todo"
@@ -17,7 +17,7 @@ todo =
            ]
   }
 
-inProgress :: List.State
+inProgress :: List.Input
 inProgress =
   { name: "In progress"
   , id: "prog"
@@ -27,7 +27,7 @@ inProgress =
            ]
   }
 
-done :: List.State
+done :: List.Input
 done =
   { name: "Done"
   , id: "done"

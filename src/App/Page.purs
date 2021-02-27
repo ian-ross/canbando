@@ -48,13 +48,12 @@ wrap lists =
 render :: forall m. MonadEffect m => State -> ComponentHTML Action Slots m
 render state = div_ [header, wrap lists]
   where lists = mapWithIndex onelist state.lists
-        onelist idx lst = slot _list idx List.component lst absurd
+        onelist idx lst = slot _list idx List.component lst (Just <<< ListAction)
 
 handleAction :: forall cs o m. Action -> HalogenM State Action cs o m Unit
 handleAction = case _ of
   AddList ->
-    modify_ \state -> state { lists = state.lists <>
-                                      [{ name: "New list", idPrefix: "new", nextID: 1, cards: [] }]}
+    modify_ \state -> state { lists = state.lists <> [List.newList "new" "New list"]}
 
   _ ->
     pure unit

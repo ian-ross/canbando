@@ -3,22 +3,16 @@ module Component.Card (Input, Output, State, Slot, component, newCard) where
 import Prelude hiding (div)
 
 import CSS as CSS
-import DOM.HTML.Indexed (Interactive)
-import Data.Maybe (Maybe(..), fromMaybe)
-import Effect (Effect)
+import Data.Maybe (Maybe(..))
 import Effect.Class (class MonadEffect)
-import Effect.Console (log)
 import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, liftEffect, mkComponent, mkEval, modify_, raise)
 import Halogen as H
-import Halogen.HTML (ElemName(..), HTML, Node, a, div, element, input, text)
+import Halogen.HTML (HTML, a, div, input, text)
 import Halogen.HTML.Events (onBlur, onClick, onFocus, onKeyDown, onKeyUp, onValueChange)
 import Halogen.HTML.Properties (class_, classes, href, id_, tabIndex, value)
-import Web.Event.Event (Event)
+import Util (focusElement)
 import Web.UIEvent.KeyboardEvent (KeyboardEvent, key)
 
-
-foreign import blurTarget :: Event -> Effect Unit
-foreign import focusElement :: String -> Effect Unit
 
 type State = { id :: String, title :: String, edit :: String, editing :: Boolean }
 
@@ -28,7 +22,7 @@ data Output = TitleChanged String
 
 data Action = StartEditing | Editing EditAction
 
-data EditAction =  Edited String | Accept | Reject
+data EditAction = Edited String | Accept | Reject
 
 type Slot id = forall query. H.Slot query Output id
 

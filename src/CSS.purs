@@ -50,6 +50,9 @@ flexRow = ClassName "flex-row"
 flexShrink0 :: ClassName
 flexShrink0 = ClassName "flex-shrink-0"
 
+formControlLG :: ClassName
+formControlLG = ClassName "form-control-lg"
+
 hidden :: ClassName
 hidden = ClassName "d-none"
 
