@@ -8,15 +8,18 @@ import Component.Icon (icon)
 import Data.Array (mapWithIndex)
 import Data.Maybe (Maybe(..))
 import Data.Symbol (SProxy(..))
+import Debug.Trace (traceM)
 import Effect.Class (class MonadEffect)
-import Effect.Console (log)
-import Halogen (Component, ComponentHTML, HalogenM, defaultEval, liftEffect, mkComponent, mkEval, modify_)
+import Halogen (Component, ComponentHTML, HalogenM, defaultEval, mkComponent, mkEval, modify_)
 import Halogen as H
 import Halogen.HTML (HTML, button, div, h1_, slot, text)
 import Halogen.HTML.Events (onClick)
 import Halogen.HTML.Properties (classes)
 
-type State = { name :: String, cards :: Array Card.State }
+type State = { name :: String
+             , id :: String
+             , nextID :: Int
+             , cards :: Array Card.Input }
 
 type Input = State
 
@@ -53,12 +56,16 @@ render state =
     [ icon "bi-plus-circle", text "Add new card"]
   ]
   where cards = mapWithIndex onecard state.cards
-        onecard idx crd = slot _card idx Card.component crd.title (Just <<< CardAction)
+        onecard idx crd = slot _card idx Card.component crd (Just <<< CardAction)
 
 handleAction :: forall output m. MonadEffect m =>
                 Action -> HalogenM State Action Slots output m Unit
 handleAction = case _ of
   AddCard ->
-    modify_ \state -> state { cards = state.cards <> [{ title: "New card" }] }
+    modify_ \state -> state
+                      { nextID = state.nextID + 1
+                      , cards = state.cards <>
+                                [Card.newCard (state.id <>
+                                               show state.nextID) "New card"] }
   CardAction o ->
-    liftEffect $ log "CARD ACTION IN LIST"
+    traceM o
