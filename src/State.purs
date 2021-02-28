@@ -2,6 +2,7 @@ module State where
 
 import Component.List as List
 
+
 type State = { lists :: Array List.Input }
 
 todo :: List.Input

@@ -2,6 +2,7 @@ module CSS where
 
 import Halogen.HTML (ClassName(..))
 
+
 active :: ClassName
 active = ClassName "active"
 

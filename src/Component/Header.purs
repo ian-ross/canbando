@@ -2,12 +2,14 @@ module Component.Header (header) where
 
 import Prelude hiding (div)
 
-import CSS as CSS
-import Component.Avatar (avatar)
 import Halogen (ComponentHTML)
 import Halogen.HTML (AttrName(..), a, button, div, header_, nav, span, text)
-import Halogen.HTML.Properties (attr, class_, classes, href)
 import Halogen.HTML.Properties.ARIA as ARIA
+import Halogen.HTML.Properties (attr, class_, classes, href)
+
+import CSS as CSS
+import Component.Avatar (avatar)
+
 
 header :: forall action cs m. ComponentHTML action cs m
 header =

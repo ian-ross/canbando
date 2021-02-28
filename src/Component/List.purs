@@ -2,21 +2,22 @@ module Component.List (Input, Output, State, Slot, component, newList) where
 
 import Prelude hiding (div)
 
-import CSS as CSS
-import Component.Card as Card
-import Component.Icon (icon)
 import Data.Array (mapWithIndex)
 import Data.Maybe (Maybe(..))
 import Data.Symbol (SProxy(..))
 import Debug.Trace (traceM)
 import Effect.Class (class MonadEffect)
-import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, mkComponent, mkEval, modify_, raise)
 import Halogen as H
-import Halogen.HTML (HTML, button, div, h1, slot, text)
+import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, mkComponent, mkEval, modify_, raise)
 import Halogen.HTML.Events (onClick)
+import Halogen.HTML (HTML, button, div, h1, slot, text)
 import Halogen.HTML.Properties (classes)
-import Inputs (EditAction, inputsWith)
-import Inputs as Inputs
+
+import Component.Card as Card
+import Component.Editable as Editable
+import Component.Editable (EditAction, editableWith)
+import Component.Icon (icon)
+import CSS as CSS
 
 
 type State = { value :: String
@@ -67,7 +68,7 @@ render :: forall m. MonadEffect m => State -> ComponentHTML Action Slots m
 render s =
   div [classes [ CSS.bgLight, CSS.p3, CSS.rounded, CSS.listWrapper
                , CSS.flexGrow0, CSS.flexShrink0 ]]
-  (inputsWith [CSS.formControlLG] h1 Editing s <>
+  (editableWith [CSS.formControlLG] h1 Editing s <>
    [ div [classes [CSS.dFlex, CSS.flexColumn]] cards
    , button [classes [CSS.rounded, CSS.addNewCard], onClick \_ -> Just AddCard]
      [ icon "bi-plus-circle", text "Add new card"]
@@ -90,6 +91,6 @@ handleAction action = do
     CardAction o -> traceM o
 
     Editing editAction -> do
-      Inputs.handleAction editAction >>= case _ of
+      Editable.handleAction editAction >>= case _ of
         Nothing -> pure unit
         Just s -> raise $ ListTitleChanged s

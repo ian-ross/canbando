@@ -1,9 +1,11 @@
 module Component.Avatar (avatar) where
 
-import CSS as CSS
 import Halogen (ComponentHTML)
 import Halogen.HTML (div, text)
 import Halogen.HTML.Properties (classes)
+
+import CSS as CSS
+
 
 avatar :: forall action slots m. String -> ComponentHTML action slots m
 avatar initials =

@@ -2,19 +2,21 @@ module App.Page where
 
 import Prelude hiding (div)
 
-import CSS as CSS
-import Component.Header (header)
-import Component.Icon (icon)
-import Component.List as List
 import Data.Array (mapWithIndex)
 import Data.Maybe (Maybe(..))
 import Data.Symbol (SProxy(..))
 import Effect.Class (class MonadEffect)
 import Halogen (Component, ComponentHTML, HalogenM, defaultEval, mkComponent, mkEval, modify_)
-import Halogen.HTML (HTML, button, div, div_, main, slot, text)
 import Halogen.HTML.Events (onClick)
+import Halogen.HTML (HTML, button, div, div_, main, slot, text)
 import Halogen.HTML.Properties (class_, classes)
+
+import Component.Header (header)
+import Component.Icon (icon)
+import Component.List as List
+import CSS as CSS
 import State (State, done, inProgress, todo)
+
 
 data Action
   = AddList
