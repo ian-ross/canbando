@@ -2,18 +2,17 @@ module Component.Editable (EditAction(..), editable, editableWith, handleAction)
 
 import Prelude hiding (div)
 
-import Data.Maybe (Maybe(..))
+import CSS as CSS
 import DOM.HTML.Indexed (Interactive)
+import Data.Maybe (Maybe(..))
 import Effect.Class (class MonadEffect)
-import Halogen (ClassName, ComponentHTML, HalogenM, get, liftEffect, modify_)
+import Halogen (ClassName, HalogenM, get, liftEffect, modify_)
+import Halogen.HTML (Node, HTML, a, div, div_, input, text)
 import Halogen.HTML.Events (onBlur, onClick, onFocus, onKeyDown, onKeyUp, onValueChange)
-import Halogen.HTML (Node, a, div, input, text)
 import Halogen.HTML.Properties (class_, classes, href, id_, tabIndex, value)
+import Util (focusElement)
 import Web.Event.Event (Event)
 import Web.UIEvent.KeyboardEvent (KeyboardEvent, key)
-
-import CSS as CSS
-import Util (focusElement)
 
 
 data EditAction = StartEditing | Edited String | Accept | Reject
@@ -35,17 +34,18 @@ catchEscape f ev =
 
 
 editable ::
-  forall cs m action r.
-  (EditAction -> action) -> State r -> Array (ComponentHTML action cs m)
+  forall props act r.
+  (EditAction -> act) -> State r -> HTML props act
 editable f c = editableWith [] div f c
 
 editableWith ::
-  forall cs m action r.
+  forall props act r.
   Array ClassName ->
   (forall i w. Node (Interactive (onScroll :: Event)) w i) ->
-  (EditAction -> action) ->
-  State r -> Array (ComponentHTML action cs m)
+  (EditAction -> act) ->
+  State r -> HTML props act
 editableWith extraInputClasses headElem f c =
+  div_
   [ input [id_ inputID,
            classes (extraInputClasses <> inputClasses),
            onValueChange $ Just <<< f <<< Edited,
@@ -65,9 +65,9 @@ editableWith extraInputClasses headElem f c =
 
 
 handleAction ::
-  forall m r action cs output.
+  forall m r act cs output.
   MonadEffect m =>
-  EditAction -> HalogenM (State r) action cs output m (Maybe String)
+  EditAction -> HalogenM (State r) act cs output m (Maybe String)
 handleAction action = do
   s <- get
   if s.editing

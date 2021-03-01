@@ -2,7 +2,6 @@ module App.Page where
 
 import Prelude hiding (div)
 
-import Data.Array (mapWithIndex)
 import Data.Maybe (Maybe(..))
 import Data.Symbol (SProxy(..))
 import Effect.Class (class MonadEffect)
@@ -22,7 +21,7 @@ data Action
   = AddList
   | ListAction List.Output
 
-type Slots = ( list :: List.Slot Int )
+type Slots = ( list :: List.Slot List.Id )
 
 _list :: SProxy "list"
 _list = SProxy
@@ -30,7 +29,7 @@ _list = SProxy
 component :: forall q i o m. MonadEffect m => Component HTML q i o m
 component =
   mkComponent
-    { initialState: \_ -> { lists: [ todo, inProgress, done ] }
+    { initialState: \_ -> { nextID: 1, lists: [ todo, inProgress, done ] }
     , render
     , eval: mkEval $ defaultEval { handleAction = handleAction }
     }
@@ -49,13 +48,14 @@ wrap lists =
 
 render :: forall m. MonadEffect m => State -> ComponentHTML Action Slots m
 render state = div_ [header, wrap lists]
-  where lists = mapWithIndex onelist state.lists
-        onelist idx lst = slot _list idx List.component lst (Just <<< ListAction)
+  where lists = map onelist state.lists
+        onelist lst = slot _list lst.id List.component lst (Just <<< ListAction)
 
 handleAction :: forall cs o m. Action -> HalogenM State Action cs o m Unit
 handleAction = case _ of
   AddList ->
-    modify_ \state -> state { lists = state.lists <> [List.newList "new" "New list"]}
+    modify_ \s -> s { nextID = s.nextID + 1
+                    , lists = s.lists <> [List.newList s.nextID "New list"]}
 
   _ ->
     pure unit
