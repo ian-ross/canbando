@@ -50,6 +50,7 @@ main > .container-fluid {
 .card {
   position: relative;
   margin-bottom: 10px;
+  border-radius: 0;
   padding: 8px;
 }
 
@@ -79,7 +80,6 @@ main > .container-fluid {
   padding-right: 5px;
 }
 
-[contenteditable="true"]:active, [contenteditable="true"]:focus {
-  border:none;
-  outline:none;
+div:focus {
+  outline: none;
 }

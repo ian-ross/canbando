@@ -27,6 +27,9 @@ bgSecondary = ClassName "bg-secondary"
 card :: ClassName
 card = ClassName "card"
 
+cardInner :: ClassName
+cardInner = ClassName "card-inner"
+
 cardMenu :: ClassName
 cardMenu = ClassName "card-menu"
 

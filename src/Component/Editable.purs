@@ -55,7 +55,7 @@ editableWith extraInputClasses headElem f c =
            value c.edit]
   , headElem [classes divClasses,
               tabIndex 0,
-              onFocus $ \_ -> Just $ f StartEditing,
+              -- onFocus $ \_ -> Just $ f StartEditing,
               onClick $ \_ -> Just $ f StartEditing] [text c.value]
   , a [class_ CSS.cardMenu, href "#"] [text "..."]
   ]
