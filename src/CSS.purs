@@ -69,6 +69,9 @@ hidden = ClassName "d-none"
 icon :: ClassName
 icon = ClassName "icon"
 
+listMenu :: ClassName
+listMenu = ClassName "list-menu"
+
 listWrapper :: ClassName
 listWrapper = ClassName "list-wrapper"
 

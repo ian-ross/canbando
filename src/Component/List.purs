@@ -1,4 +1,4 @@
-module Component.List (Id, Input, Output, State, Slot, component, newList) where
+module Component.List (Id, Input, Output(..), Direction(..), State, Slot, component, newList) where
 
 import Prelude hiding (div)
 
@@ -7,16 +7,16 @@ import Component.Card (getDragData)
 import Component.Card as Card
 import Component.Editable (EditAction, editableWith)
 import Component.Editable as Editable
-import Component.Icon (icon)
+import Component.Icon (icon, iconButton)
 import Data.Array (deleteAt, filter, findIndex, insertAt)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Symbol (SProxy(..))
 import Effect.Class (class MonadEffect)
-import Halogen (Component, ComponentHTML, HalogenM, defaultEval, liftEffect, mkComponent, mkEval, modify_, raise)
+import Halogen (Component, ComponentHTML, HalogenM, defaultEval, gets, liftEffect, mkComponent, mkEval, modify_, raise)
 import Halogen as H
 import Halogen.HTML (HTML, button, div, h1, slot, text)
 import Halogen.HTML.Events (onClick, onDragEnter, onDragLeave, onDragOver, onDrop)
-import Halogen.HTML.Properties (classes)
+import Halogen.HTML.Properties (class_, classes)
 import Web.Event.Event (preventDefault)
 import Web.HTML.Event.DragEvent (DragEvent, toEvent)
 
@@ -36,7 +36,12 @@ type Input = { name :: String
              , nextID :: Int
              , cards :: Array Card.Input }
 
-data Output = ListTitleChanged String
+data Output
+  = ListTitleChanged String
+  | ListDeleted Id
+  | ListMoved Direction Id
+
+data Direction = Left | Right
 
 data Action
   = AddCard
@@ -44,6 +49,8 @@ data Action
   | Editing EditAction
   | DragOver DragEvent
   | Drop DragEvent
+  | Delete
+  | Move Direction
 
 type Slot id = forall query. H.Slot query Output id
 
@@ -80,7 +87,13 @@ render s =
       , onDragEnter \e -> Just (DragOver e)
       , onDragLeave \e -> Just (DragOver e)
       , onDrop \e -> Just (Drop e) ]
-  [editableWith [CSS.formControlLG] h1 Editing s,
+  [div [ class_ CSS.listMenu ]
+   [ iconButton "bi-chevron-left" \_ -> Just (Move Left)
+   , iconButton "bi-chevron-right" \_ -> Just (Move Right)
+   , text " "
+   , iconButton "bi-x-circle" \_ -> Just Delete
+   ],
+   editableWith [CSS.formControlLG] h1 Editing s,
    div [classes [CSS.dFlex, CSS.flexColumn]] cards,
    button [classes [CSS.rounded, CSS.addNewCard], onClick \_ -> Just AddCard]
      [ icon "bi-plus-circle", text "Add new card"]
@@ -102,6 +115,12 @@ handleAction action =
       Editable.handleAction editAction >>= case _ of
         Just s -> raise $ ListTitleChanged s
         _ -> pure unit
+
+    Delete -> raise =<< ListDeleted <$> gets _.id
+
+    Move Left -> raise =<< ListMoved Left <$> gets _.id
+
+    Move Right -> raise =<< ListMoved Right <$> gets _.id
 
     DragOver ev -> liftEffect $ preventDefault (toEvent ev)
 
@@ -143,5 +162,5 @@ insertCard idx card cards = fromMaybe cards $ insertAt idx card cards
 deleteCard :: Int -> Array Card.Input -> Array Card.Input
 deleteCard idx cards = fromMaybe cards $ deleteAt idx cards
 
-findCard :: String -> Array Card.Input -> Maybe Int
+findCard :: Card.Id -> Array Card.Input -> Maybe Int
 findCard id cards = findIndex (\c -> c.id == id) cards

@@ -33,6 +33,7 @@ main > .container-fluid {
 }
 
 .list-wrapper {
+  position: relative;
   width: 300px;
   margin-right: 20px;
 }
@@ -68,6 +69,16 @@ main > .container-fluid {
   position: absolute;
   right: 8px;
   top: 0px;
+  font-weight: bold;
+  text-decoration: none;
+  color: #555;
+}
+
+.list-menu {
+  font-family: monospace;
+  position: absolute;
+  right: 15px;
+  top: 20px;
   font-weight: bold;
   text-decoration: none;
   color: #555;

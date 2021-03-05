@@ -57,7 +57,6 @@ editableWith extraInputClasses headElem f c =
               tabIndex 0,
               -- onFocus $ \_ -> Just $ f StartEditing,
               onClick $ \_ -> Just $ f StartEditing] [text c.value]
-  , a [class_ CSS.cardMenu, href "#"] [text "..."]
   ]
   where inputClasses = if c.editing then [] else [CSS.hidden]
         divClasses = if c.editing then [CSS.hidden] else []

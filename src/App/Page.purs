@@ -2,18 +2,18 @@ module App.Page where
 
 import Prelude hiding (div)
 
-import Data.Maybe (Maybe(..))
-import Data.Symbol (SProxy(..))
-import Effect.Class (class MonadEffect)
-import Halogen (Component, ComponentHTML, HalogenM, defaultEval, mkComponent, mkEval, modify_)
-import Halogen.HTML.Events (onClick)
-import Halogen.HTML (HTML, button, div, div_, main, slot, text)
-import Halogen.HTML.Properties (class_, classes)
-
+import CSS as CSS
 import Component.Header (header)
 import Component.Icon (icon)
 import Component.List as List
-import CSS as CSS
+import Data.Array (deleteAt, filter, findIndex, insertAt, length, (!!))
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Symbol (SProxy(..))
+import Effect.Class (class MonadEffect)
+import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, mkComponent, mkEval, modify_)
+import Halogen.HTML (HTML, button, div, div_, main, slot, text)
+import Halogen.HTML.Events (onClick)
+import Halogen.HTML.Properties (class_, classes)
 import State (State, done, inProgress, todo)
 
 
@@ -57,5 +57,27 @@ handleAction = case _ of
     modify_ \s -> s { nextID = s.nextID + 1
                     , lists = s.lists <> [List.newList s.nextID "New list"]}
 
-  _ ->
-    pure unit
+  ListAction (List.ListDeleted id) -> do
+    modify_ \s -> s { lists = filter (\lst -> lst.id /= id) s.lists }
+
+  ListAction (List.ListMoved List.Left id) ->
+    modify_ \st -> st { lists = moveList id (-1) st.lists }
+
+  ListAction (List.ListMoved List.Right id) ->
+    modify_ \st -> st { lists = moveList id 1 st.lists }
+
+  _ -> pure unit
+
+
+moveList :: List.Id -> Int -> Array List.Input -> Array List.Input
+moveList id delta lsts =
+  case findList id lsts of
+    Nothing -> lsts
+    Just idx ->
+      if delta == -1 && idx == 0 || delta == 1 && idx == length lsts
+      then lsts
+      else fromMaybe lsts $ join $
+           insertAt (idx+delta) <$> (lsts !! idx) <*> deleteAt idx lsts
+
+findList :: List.Id -> Array List.Input -> Maybe Int
+findList id lists = findIndex (\lst -> lst.id == id) lists
