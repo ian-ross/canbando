@@ -30,6 +30,12 @@ card = ClassName "card"
 cardInner :: ClassName
 cardInner = ClassName "card-inner"
 
+cardDragging :: ClassName
+cardDragging = ClassName "card-dragging"
+
+cardDragIndicate :: ClassName
+cardDragIndicate = ClassName "card-drag-indicate"
+
 cardMenu :: ClassName
 cardMenu = ClassName "card-menu"
 

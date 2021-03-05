@@ -54,6 +54,15 @@ main > .container-fluid {
   padding: 8px;
 }
 
+.card-dragging {
+  opacity: 0.2;
+}
+
+.card-drag-indicate {
+  background: white;
+  background: linear-gradient(grey 0%, transparent 25%, transparent 100%);
+}
+
 .card-menu {
   font-family: monospace;
   position: absolute;
