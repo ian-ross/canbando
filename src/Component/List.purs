@@ -14,10 +14,11 @@ import Effect.Class (class MonadEffect)
 import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, liftEffect, mkComponent, mkEval, modify_, raise)
 import Halogen as H
 import Halogen.HTML (HTML, button, div, h1, slot, text)
-import Halogen.HTML.Events (onClick, onDragEnter, onDragLeave, onDragOver)
+import Halogen.HTML.Events (onClick, onDragEnter, onDragLeave, onDragOver, onDrop)
 import Halogen.HTML.Properties (classes)
 import Web.Event.Event (preventDefault)
-import Web.HTML.Event.DragEvent (DragEvent, toEvent)
+import Web.HTML.Event.DataTransfer (getData)
+import Web.HTML.Event.DragEvent (DragEvent, dataTransfer, toEvent)
 
 
 type Id = String
@@ -41,6 +42,8 @@ data Action
   = AddCard
   | CardAction Card.Output
   | Editing EditAction
+  | DragOver DragEvent
+  | Drop DragEvent
 
 type Slot id = forall query. H.Slot query Output id
 
@@ -72,7 +75,11 @@ initialState { name, id, nextID, cards } =
 render :: forall m. MonadEffect m => State -> ComponentHTML Action Slots m
 render s =
   div [classes [ CSS.bgLight, CSS.p3, CSS.rounded, CSS.listWrapper
-               , CSS.flexGrow0, CSS.flexShrink0 ] ]
+               , CSS.flexGrow0, CSS.flexShrink0 ]
+      , onDragOver \e -> Just (DragOver e)
+      , onDragEnter \e -> Just (DragOver e)
+      , onDragLeave \e -> Just (DragOver e)
+      , onDrop \e -> Just (Drop e) ]
   [editableWith [CSS.formControlLG] h1 Editing s,
    div [classes [CSS.dFlex, CSS.flexColumn]] cards,
    button [classes [CSS.rounded, CSS.addNewCard], onClick \_ -> Just AddCard]
@@ -96,6 +103,18 @@ handleAction action =
         Just s -> raise $ ListTitleChanged s
         _ -> pure unit
 
+    DragOver ev -> do
+      liftEffect $ preventDefault (toEvent ev)
+
+    Drop ev -> do
+      from <- Card.decodeDragData <$> (liftEffect $ getData Card.mtype (dataTransfer ev))
+      case from of
+        Nothing -> pure unit
+        Just f -> modify_ \s ->
+          case findIndex (\c -> c.id == f.id) s.cards of
+            Nothing -> s { cards = fromMaybe s.cards $ insertAt 0 f s.cards }
+            Just fromIdx -> s
+
     CardAction (Card.CardDeleted id) ->
       modify_ \s -> if s.lastMoveLocal
                     then s { lastMoveLocal = false }
@@ -110,11 +129,12 @@ handleAction action =
     CardAction (Card.CardMoved from to) -> do
       modify_ \s ->
         case findIndex (\c -> c.id == from.id) s.cards of
-          Nothing ->
+          Nothing -> do
             let toIdx = fromMaybe 0 $ findIndex (\c -> c.id == to) s.cards
-            in s { cards = fromMaybe s.cards $ insertAt toIdx from s.cards }
-          Just fromIdx ->
+            s { cards = fromMaybe s.cards $ insertAt toIdx from s.cards }
+          Just fromIdx -> do
             let cards' = fromMaybe s.cards $ deleteAt fromIdx s.cards
-            in let toIdx = fromMaybe 0 $ findIndex (\c -> c.id == to) cards'
-               in s { cards = fromMaybe s.cards $ insertAt toIdx from cards'
-                    , lastMoveLocal = true }
+            let toIdx = fromMaybe 0 $ findIndex (\c -> c.id == to) cards'
+            let insIdx = if fromIdx <= toIdx then toIdx + 1 else toIdx
+            s { cards = fromMaybe s.cards $ insertAt insIdx from cards'
+              , lastMoveLocal = true }

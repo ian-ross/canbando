@@ -1,4 +1,7 @@
-module Component.Card (Id, Input(..), Output(..), State, Slot, component, newCard) where
+module Component.Card (
+  Id, Input(..), Output(..), State, Slot,
+  component, newCard, decodeDragData, mtype
+) where
 
 import Prelude hiding (div)
 
