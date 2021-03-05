@@ -1,18 +1,16 @@
 module Component.Card (
   Id, Input(..), Output(..), State, Slot,
-  component, newCard, decodeDragData, mtype
+  component, newCard, getDragData
 ) where
 
 import Prelude hiding (div)
 
 import CSS as CSS
-import Data.Argonaut (class DecodeJson, class EncodeJson, decodeJson, encodeJson, jsonParser, stringify)
-import Data.Argonaut.Decode.Generic.Rep (genericDecodeJson)
-import Data.Argonaut.Encode.Generic.Rep (genericEncodeJson)
-import Data.Either (Either(..))
-import Data.Generic.Rep (class Generic)
+import Data.Argonaut (decodeJson, encodeJson, jsonParser, stringify)
+import Data.Either (hush)
 import Data.Maybe (Maybe(..))
 import Data.MediaType (MediaType(..))
+import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, mkComponent, mkEval, modify_, raise)
 import Halogen as H
@@ -36,9 +34,6 @@ type State = { id :: Id
              , dragIndicate :: Boolean }
 
 type Input = { id :: Id, title :: String }
-
-stateToInput :: State -> Input
-stateToInput s = { id: s.id, title: s.value }
 
 data Output = TitleChanged Id String
             | CardDeleted Id
@@ -153,8 +148,7 @@ handleAction action = do
 
     Drop ev -> do
       modify_ \st -> st { dragging = false, dragIndicate = false }
-      from <- decodeDragData <$> (liftEffect $ getData mtype (dataTransfer ev))
-      case from of
+      liftEffect (getDragData ev) >>= case _ of
         Nothing -> pure unit
         Just f -> raise $ CardMoved f s.id
 
@@ -164,13 +158,10 @@ handleAction action = do
 
 
 encodeDragData :: State -> String
-encodeDragData = stringify <<< encodeJson <<< stateToInput
+encodeDragData s = stringify (encodeJson { id: s.id, title: s.value })
 
 decodeDragData :: String -> Maybe Input
-decodeDragData s =
-  case jsonParser s of
-    Right json ->
-      case decodeJson json of
-        Left err -> Nothing
-        Right ok -> Just ok
-    Left _ -> Nothing
+decodeDragData = hush <<< (jsonParser >=> decodeJson)
+
+getDragData :: DragEvent -> Effect (Maybe Input)
+getDragData ev = decodeDragData <$> getData mtype (dataTransfer ev)
