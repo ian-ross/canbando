@@ -1,12 +1,13 @@
-module Component.Icon (icon, iconButton) where
+module Canbando.Component.Icon (icon, iconButton) where
 
-import CSS as CSS
 import Data.Maybe (Maybe)
 import Halogen (ComponentHTML)
 import Halogen.HTML (ClassName(..), i)
 import Halogen.HTML.Events (onClick)
 import Halogen.HTML.Properties (classes)
 import Web.UIEvent.MouseEvent (MouseEvent)
+
+import Canbando.CSS as CSS
 
 
 icon :: forall action cs m. String -> ComponentHTML action cs m

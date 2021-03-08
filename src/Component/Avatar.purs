@@ -1,10 +1,10 @@
-module Component.Avatar (avatar) where
+module Canbando.Component.Avatar (avatar) where
 
 import Halogen (ComponentHTML)
 import Halogen.HTML (div, text)
 import Halogen.HTML.Properties (classes)
 
-import CSS as CSS
+import Canbando.CSS as CSS
 
 
 avatar :: forall action slots m. String -> ComponentHTML action slots m

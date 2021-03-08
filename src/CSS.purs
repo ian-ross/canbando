@@ -1,4 +1,4 @@
-module CSS where
+module Canbando.CSS where
 
 import Halogen.HTML (ClassName(..))
 

@@ -1,11 +1,10 @@
-module Component.Card (
-  Id, Input(..), Output(..), State, Slot,
-  component, newCard, getDragData
+module Canbando.Component.Card (
+  Output(..), Slot,
+  component, cardDragData
 ) where
 
 import Prelude hiding (div)
 
-import CSS as CSS
 import Data.Argonaut (decodeJson, encodeJson, jsonParser, stringify)
 import Data.Either (hush)
 import Data.Maybe (Maybe(..))
@@ -17,27 +16,27 @@ import Halogen as H
 import Halogen.HTML (HTML, a, div, input, text)
 import Halogen.HTML.Events (onBlur, onClick, onDragEnd, onDragEnter, onDragLeave, onDragOver, onDragStart, onDrop, onKeyDown, onKeyUp, onValueChange)
 import Halogen.HTML.Properties (class_, classes, draggable, href, id_, value)
-import Util (focusElement)
 import Web.Event.Event (preventDefault)
 import Web.HTML.Event.DataTransfer (DropEffect(..), dropEffect, getData, setData)
 import Web.HTML.Event.DragEvent (DragEvent, dataTransfer, toEvent)
 import Web.UIEvent.KeyboardEvent (KeyboardEvent, key)
 
+import Canbando.CSS as CSS
+import Canbando.Model.Card (Id, CardRep, Card)
+import Canbando.Util (focusElement)
 
-type Id = String
 
-type State = { id :: Id
-             , value :: String
-             , edit :: String
-             , editing :: Boolean
-             , dragging :: Boolean
-             , dragIndicate :: Boolean }
+type StateInfo =
+  ( edit :: String
+  , editing :: Boolean
+  , dragging :: Boolean
+  , dragIndicate :: Boolean )
 
-type Input = { id :: Id, title :: String }
+type State =  { | CardRep StateInfo }
 
-data Output = TitleChanged Id String
-            | CardDeleted Id
-            | CardMoved Input Id
+data Output
+  = CardDeleted Id
+  | CardMoved Card Id
 
 data Action = StartEditing | Edited String | Accept | Reject
             | DeleteCard
@@ -55,7 +54,7 @@ catchEscape ev =
   if key ev == "Escape" then Just Reject else Nothing
 
 
-component :: forall query m. MonadEffect m => Component HTML query Input Output m
+component :: forall query m. MonadEffect m => Component HTML query Card Output m
 component =
   mkComponent
   { initialState: initialState
@@ -64,13 +63,9 @@ component =
   }
 
 
-newCard :: Int -> String -> Input
-newCard id title = { id: "C" <> show id, title: title }
-
-
-initialState :: Input -> State
+initialState :: Card -> State
 initialState inp =
-  { id: inp.id, value: inp.title, edit: ""
+  { id: inp.id, title: inp.title, edit: ""
   , editing: false, dragging: false, dragIndicate: false }
 
 
@@ -100,7 +95,7 @@ render s =
           -- , onFocus \_ -> Just StartEditing
           , onBlur \_ -> if s.editing then Just Accept else Nothing
           , value s.edit ]
-  , div [ classes divClasses ] [text s.value]
+  , div [ classes divClasses ] [text s.title]
   , a [ class_ CSS.cardMenu
       , href "#"
       , onClick \_ -> Just DeleteCard ] [text "..."]
@@ -118,7 +113,7 @@ handleAction action = do
   case action of
     StartEditing ->
       when (not s.editing) do
-        modify_ \st -> st { edit = s.value, editing = true }
+        modify_ \st -> st { edit = s.title, editing = true }
         liftEffect $ focusElement $ s.id <> "_in"
 
     Edited edit ->
@@ -127,14 +122,13 @@ handleAction action = do
 
     Accept ->
       when s.editing do
-        modify_ \st -> st { value = s.edit, editing = false }
-        raise $ TitleChanged s.id s.edit
+        modify_ \st -> st { title = s.edit, editing = false }
 
     Reject ->
       when s.editing do
         modify_ \st -> st { editing = false }
 
-    DeleteCard -> raise $ CardDeleted s.id
+    DeleteCard -> raise (CardDeleted s.id)
 
     DragStart ev -> do
       liftEffect $ setData mtype (encodeDragData s) (dataTransfer ev)
@@ -148,9 +142,9 @@ handleAction action = do
 
     Drop ev -> do
       modify_ \st -> st { dragging = false, dragIndicate = false }
-      liftEffect (getDragData ev) >>= case _ of
+      liftEffect (cardDragData ev) >>= case _ of
         Nothing -> pure unit
-        Just f -> raise $ CardMoved f s.id
+        Just f -> raise (CardMoved f s.id)
 
     DragIndicate ev drag -> do
       liftEffect $ preventDefault (toEvent ev)
@@ -158,10 +152,10 @@ handleAction action = do
 
 
 encodeDragData :: State -> String
-encodeDragData s = stringify (encodeJson { id: s.id, title: s.value })
+encodeDragData s = stringify (encodeJson { id: s.id, title: s.title })
 
-decodeDragData :: String -> Maybe Input
+decodeDragData :: String -> Maybe Card
 decodeDragData = hush <<< (jsonParser >=> decodeJson)
 
-getDragData :: DragEvent -> Effect (Maybe Input)
-getDragData ev = decodeDragData <$> getData mtype (dataTransfer ev)
+cardDragData :: DragEvent -> Effect (Maybe Card)
+cardDragData ev = decodeDragData <$> getData mtype (dataTransfer ev)

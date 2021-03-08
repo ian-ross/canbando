@@ -1,4 +1,4 @@
-module Util (blurTarget, focusElement) where
+module Canbando.Util (blurTarget, focusElement) where
 
 import Prelude
 

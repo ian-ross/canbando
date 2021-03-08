@@ -1,20 +1,24 @@
-module App.Page where
+module Canbando.Page.Board where
 
 import Prelude hiding (div)
 
-import CSS as CSS
-import Component.Header (header)
-import Component.Icon (icon)
-import Component.List as List
+import Canbando.CSS as CSS
+import Canbando.Capability.IdSupply (class IdSupply)
+import Canbando.Capability.Resource.List (class ManageList)
+import Canbando.Component.Header (header)
+import Canbando.Component.Icon (icon)
+import Canbando.Component.List (Direction(..), Output(..), Slot, component) as List
+import Canbando.Model.List (Id) as List
+import Canbando.Model.List (List, newList)
+import Canbando.State (BoardState, done, inProgress, todo)
 import Data.Array (deleteAt, filter, findIndex, insertAt, length, (!!))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Symbol (SProxy(..))
 import Effect.Class (class MonadEffect)
-import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, mkComponent, mkEval, modify_)
+import Halogen (Component, ComponentHTML, HalogenM, defaultEval, mkComponent, mkEval, modify_)
 import Halogen.HTML (HTML, button, div, div_, main, slot, text)
 import Halogen.HTML.Events (onClick)
 import Halogen.HTML.Properties (class_, classes)
-import State (State, done, inProgress, todo)
 
 
 data Action
@@ -26,7 +30,12 @@ type Slots = ( list :: List.Slot List.Id )
 _list :: SProxy "list"
 _list = SProxy
 
-component :: forall q i o m. MonadEffect m => Component HTML q i o m
+component ::
+  forall q i o m.
+  MonadEffect m =>
+  ManageList m =>
+  IdSupply m =>
+  Component HTML q i o m
 component =
   mkComponent
     { initialState: \_ -> { nextID: 1, lists: [ todo, inProgress, done ] }
@@ -46,16 +55,24 @@ wrap lists =
      [icon "bi-plus-circle", text "Add new list"]]
   ]
 
-render :: forall m. MonadEffect m => State -> ComponentHTML Action Slots m
+render ::
+  forall m.
+  MonadEffect m =>
+  ManageList m =>
+  IdSupply m =>
+  BoardState -> ComponentHTML Action Slots m
 render state = div_ [header, wrap lists]
   where lists = map onelist state.lists
         onelist lst = slot _list lst.id List.component lst (Just <<< ListAction)
 
-handleAction :: forall cs o m. Action -> HalogenM State Action cs o m Unit
+handleAction ::
+  forall cs o m.
+  IdSupply m =>
+  Action -> HalogenM BoardState Action cs o m Unit
 handleAction = case _ of
-  AddList ->
-    modify_ \s -> s { nextID = s.nextID + 1
-                    , lists = s.lists <> [List.newList s.nextID "New list"]}
+  AddList -> do
+    list <- newList
+    modify_ \s -> s { lists = s.lists <> [list]}
 
   ListAction (List.ListDeleted id) -> do
     modify_ \s -> s { lists = filter (\lst -> lst.id /= id) s.lists }
@@ -66,10 +83,8 @@ handleAction = case _ of
   ListAction (List.ListMoved List.Right id) ->
     modify_ \st -> st { lists = moveList id 1 st.lists }
 
-  _ -> pure unit
 
-
-moveList :: List.Id -> Int -> Array List.Input -> Array List.Input
+moveList :: List.Id -> Int -> Array List -> Array List
 moveList id delta lsts =
   case findList id lsts of
     Nothing -> lsts
@@ -79,5 +94,5 @@ moveList id delta lsts =
       else fromMaybe lsts $ join $
            insertAt (idx+delta) <$> (lsts !! idx) <*> deleteAt idx lsts
 
-findList :: List.Id -> Array List.Input -> Maybe Int
+findList :: List.Id -> Array List -> Maybe Int
 findList id lists = findIndex (\lst -> lst.id == id) lists

@@ -1,12 +1,12 @@
-module State where
+module Canbando.State where
 
-import Component.List as List
+import Canbando.Model.List (List)
 
 
-type State = { nextID :: Int
-             , lists :: Array List.Input }
+type BoardState = { nextID :: Int
+                  , lists :: Array List }
 
-todo :: List.Input
+todo :: List
 todo =
   { name: "To Do"
   , id: "todo"
@@ -19,7 +19,7 @@ todo =
            ]
   }
 
-inProgress :: List.Input
+inProgress :: List
 inProgress =
   { name: "In progress"
   , id: "prog"
@@ -29,7 +29,7 @@ inProgress =
            ]
   }
 
-done :: List.Input
+done :: List
 done =
   { name: "Done"
   , id: "done"

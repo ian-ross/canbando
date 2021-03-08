@@ -1,23 +1,24 @@
-module Component.Editable (EditAction(..), editable, editableWith, handleAction) where
+module Canbando.Component.Editable (EditAction(..), editable, editableWith, handleAction) where
 
 import Prelude hiding (div)
 
-import CSS as CSS
 import DOM.HTML.Indexed (Interactive)
 import Data.Maybe (Maybe(..))
 import Effect.Class (class MonadEffect)
 import Halogen (ClassName, HalogenM, get, liftEffect, modify_)
-import Halogen.HTML (Node, HTML, a, div, div_, input, text)
+import Halogen.HTML (HTML, Node, div, div_, input, text)
 import Halogen.HTML.Events (onBlur, onClick, onKeyDown, onKeyUp, onValueChange)
-import Halogen.HTML.Properties (class_, classes, href, id_, tabIndex, value)
-import Util (focusElement)
+import Halogen.HTML.Properties (classes, id_, tabIndex, value)
 import Web.Event.Event (Event)
 import Web.UIEvent.KeyboardEvent (KeyboardEvent, key)
+
+import Canbando.CSS as CSS
+import Canbando.Util (focusElement)
 
 
 data EditAction = StartEditing | Edited String | Accept | Reject
 
-type State r = { id :: String, value :: String, edit :: String, editing :: Boolean | r }
+type State r = { id :: String, name :: String, edit :: String, editing :: Boolean | r }
 
 
 catchEnter :: forall action. (EditAction -> action) -> KeyboardEvent -> Maybe action
@@ -56,7 +57,7 @@ editableWith extraInputClasses headElem f c =
   , headElem [classes divClasses,
               tabIndex 0,
               -- onFocus $ \_ -> Just $ f StartEditing,
-              onClick $ \_ -> Just $ f StartEditing] [text c.value]
+              onClick $ \_ -> Just $ f StartEditing] [text c.name]
   ]
   where inputClasses = if c.editing then [] else [CSS.hidden]
         divClasses = if c.editing then [CSS.hidden] else []
@@ -77,7 +78,7 @@ handleAction action = do
         pure Nothing
 
       Accept -> do
-        modify_ \state -> state { value = s.edit, editing = false }
+        modify_ \state -> state { name = s.edit, editing = false }
         pure $ Just s.edit
 
       Reject -> do
@@ -88,7 +89,7 @@ handleAction action = do
     else
     case action of
       StartEditing -> do
-        modify_ \state -> state { edit = s.value, editing = true }
+        modify_ \state -> state { edit = s.name, editing = true }
         liftEffect $ focusElement $ s.id <> "_in"
         pure Nothing
 
