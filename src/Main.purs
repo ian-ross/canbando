@@ -5,6 +5,7 @@ import Prelude
 import Canbando.AppM (runApp)
 import Canbando.Env (LogLevel(..))
 import Canbando.Page.Board as Page
+import Canbando.State (initBoard)
 import Effect (Effect)
 import Effect.Ref (new)
 import Halogen (hoist, liftEffect)
@@ -20,4 +21,4 @@ main = HA.runHalogenAff do
   localForage <- liftEffect $ createInstance defaultLocalforageConfig
   let env = { logLevel: Debug, idSupply, store: localForage }
       root = hoist (runApp env) Page.component
-  runUI root unit body
+  runUI root initBoard body

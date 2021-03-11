@@ -1,6 +1,6 @@
 module Canbando.Model.Card
        ( Id, Card, CardRep
-       , encode, decode
+       , encode, decode, toCard
        , newCard
        ) where
 
@@ -26,6 +26,8 @@ encode = encodeJson
 decode :: Json -> Either JsonDecodeError Card
 decode = decodeJson
 
+toCard :: forall row. { | CardRep row } -> Card
+toCard card = { id: card.id, title: card.title }
 
 newCard :: forall m. IdSupply m => m Card
 newCard = do

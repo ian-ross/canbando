@@ -11,8 +11,8 @@ import Canbando.CSS as CSS
 import Canbando.Component.Avatar (avatar)
 
 
-header :: forall action cs m. ComponentHTML action cs m
-header =
+header :: forall action cs m. String -> ComponentHTML action cs m
+header name =
   header_
   [ nav
     [classes [ CSS.navbar, CSS.navbarExpandMd, CSS.navbarLight
@@ -20,7 +20,7 @@ header =
     ]
     [ div [class_ CSS.containerFluid]
       [ a [class_ CSS.navbarBrand, href "#"]
-        [text "Project Whatnot"]
+        [text name]
       , navbarToggler
       , div [class_ CSS.dFlex]
         [ a [ classes [CSS.navLink, CSS.active]

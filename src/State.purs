@@ -1,9 +1,13 @@
-module Canbando.State where
+module Canbando.State (initBoard) where
 
+import Canbando.Model.Board (Board)
 import Canbando.Model.List (List)
 
 
-type BoardState = { lists :: Array List }
+initBoard :: Board
+initBoard = { id: "B0000001"
+            , name: "Test board"
+            , lists: [todo, inProgress, done] }
 
 todo :: List
 todo =
