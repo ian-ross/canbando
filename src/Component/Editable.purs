@@ -2,18 +2,17 @@ module Canbando.Component.Editable (EditAction(..), editable, editableWith, hand
 
 import Prelude hiding (div)
 
+import Canbando.CSS as CSS
+import Canbando.Util (focusElement)
 import DOM.HTML.Indexed (Interactive)
 import Data.Maybe (Maybe(..))
 import Effect.Class (class MonadEffect)
 import Halogen (ClassName, HalogenM, get, liftEffect, modify_)
 import Halogen.HTML (HTML, Node, div, div_, input, text)
 import Halogen.HTML.Events (onBlur, onClick, onKeyDown, onKeyUp, onValueChange)
-import Halogen.HTML.Properties (classes, id_, tabIndex, value)
+import Halogen.HTML.Properties (classes, id, tabIndex, value)
 import Web.Event.Event (Event)
 import Web.UIEvent.KeyboardEvent (KeyboardEvent, key)
-
-import Canbando.CSS as CSS
-import Canbando.Util (focusElement)
 
 
 data EditAction = StartEditing | Edited String | Accept | Reject
@@ -21,43 +20,43 @@ data EditAction = StartEditing | Edited String | Accept | Reject
 type State r = { id :: String, name :: String, edit :: String, editing :: Boolean | r }
 
 
-catchEnter :: forall action. (EditAction -> action) -> KeyboardEvent -> Maybe action
-catchEnter f ev =
+catchEnter :: KeyboardEvent -> Maybe EditAction
+catchEnter ev =
   case key ev of
-    "Enter" -> Just $ f Accept
+    "Enter" -> Just Accept
     _ -> Nothing
 
-catchEscape :: forall action. (EditAction -> action) -> KeyboardEvent -> Maybe action
-catchEscape f ev =
+catchEscape :: KeyboardEvent -> Maybe EditAction
+catchEscape ev =
   case key ev of
-    "Escape" -> Just $ f Reject
+    "Escape" -> Just Reject
     _ -> Nothing
 
 
 editable ::
   forall props act r.
-  (EditAction -> act) -> State r -> HTML props act
+  (Maybe EditAction -> act) -> State r -> HTML props act
 editable f c = editableWith [] div f c
 
 editableWith ::
   forall props act r.
   Array ClassName ->
   (forall i w. Node (Interactive (onScroll :: Event)) w i) ->
-  (EditAction -> act) ->
+  (Maybe EditAction -> act) ->
   State r -> HTML props act
 editableWith extraInputClasses headElem f c =
   div_
-  [ input [id_ inputID,
+  [ input [id inputID,
            classes (extraInputClasses <> inputClasses),
-           onValueChange $ Just <<< f <<< Edited,
-           onKeyUp (catchEnter f),
-           onKeyDown (catchEscape f),
-           onBlur $ \_ -> if c.editing then Just (f Accept) else Nothing,
+           onValueChange $ f <<< Just <<< Edited,
+           onKeyUp (f <<< catchEnter),
+           onKeyDown (f <<< catchEscape),
+           onBlur $ \_ -> f $ if c.editing then Just Accept else Nothing,
            value c.edit]
   , headElem [classes divClasses,
               tabIndex 0,
               -- onFocus $ \_ -> Just $ f StartEditing,
-              onClick $ \_ -> Just $ f StartEditing] [text c.name]
+              onClick $ \_ -> f (Just StartEditing)] [text c.name]
   ]
   where inputClasses = if c.editing then [] else [CSS.hidden]
         divClasses = if c.editing then [CSS.hidden] else []

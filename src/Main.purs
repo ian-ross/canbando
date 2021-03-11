@@ -10,12 +10,14 @@ import Effect.Ref (new)
 import Halogen (hoist, liftEffect)
 import Halogen.Aff as HA
 import Halogen.VDom.Driver (runUI)
+import Localforage (createInstance, defaultLocalforageConfig)
 
 
 main :: Effect Unit
 main = HA.runHalogenAff do
   body <- HA.awaitBody
   idSupply <- liftEffect $ new 0
-  let env = { logLevel: Debug, idSupply }
+  localForage <- liftEffect $ createInstance defaultLocalforageConfig
+  let env = { logLevel: Debug, idSupply, store: localForage }
       root = hoist (runApp env) Page.component
   runUI root unit body

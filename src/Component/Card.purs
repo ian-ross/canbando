@@ -5,7 +5,10 @@ module Canbando.Component.Card (
 
 import Prelude hiding (div)
 
-import Data.Argonaut (decodeJson, encodeJson, jsonParser, stringify)
+import Canbando.CSS as CSS
+import Canbando.Model.Card (Id, CardRep, Card)
+import Canbando.Util (focusElement)
+import Data.Argonaut (decodeJson, encodeJson, parseJson, stringify)
 import Data.Either (hush)
 import Data.Maybe (Maybe(..))
 import Data.MediaType (MediaType(..))
@@ -13,17 +16,13 @@ import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, mkComponent, mkEval, modify_, raise)
 import Halogen as H
-import Halogen.HTML (HTML, a, div, input, text)
+import Halogen.HTML (a, div, input, text)
 import Halogen.HTML.Events (onBlur, onClick, onDragEnd, onDragEnter, onDragLeave, onDragOver, onDragStart, onDrop, onKeyDown, onKeyUp, onValueChange)
-import Halogen.HTML.Properties (class_, classes, draggable, href, id_, value)
+import Halogen.HTML.Properties (class_, classes, draggable, href, id, value)
 import Web.Event.Event (preventDefault)
 import Web.HTML.Event.DataTransfer (DropEffect(..), dropEffect, getData, setData)
 import Web.HTML.Event.DragEvent (DragEvent, dataTransfer, toEvent)
 import Web.UIEvent.KeyboardEvent (KeyboardEvent, key)
-
-import Canbando.CSS as CSS
-import Canbando.Model.Card (Id, CardRep, Card)
-import Canbando.Util (focusElement)
 
 
 type StateInfo =
@@ -42,19 +41,20 @@ data Action = StartEditing | Edited String | Accept | Reject
             | DeleteCard
             | DragStart DragEvent | DragEnd DragEvent | Drop DragEvent
             | DragIndicate DragEvent Boolean
+            | DoNothing
 
 type Slot id = forall query. H.Slot query Output id
 
-catchEnter :: KeyboardEvent -> Maybe Action
+catchEnter :: KeyboardEvent -> Action
 catchEnter ev =
-  if key ev == "Enter" then Just Accept else Nothing
+  if key ev == "Enter" then Accept else DoNothing
 
-catchEscape :: KeyboardEvent -> Maybe Action
+catchEscape :: KeyboardEvent -> Action
 catchEscape ev =
-  if key ev == "Escape" then Just Reject else Nothing
+  if key ev == "Escape" then Reject else DoNothing
 
 
-component :: forall query m. MonadEffect m => Component HTML query Card Output m
+component :: forall query m. MonadEffect m => Component query Card Output m
 component =
   mkComponent
   { initialState: initialState
@@ -71,34 +71,34 @@ initialState inp =
 
 render :: forall cs m. State -> ComponentHTML Action cs m
 render s =
-  div [ id_ s.id
+  div [ id s.id
       , classes $
         [CSS.card] <>
         if s.dragging then [CSS.cardDragging] else [] <>
         if s.dragIndicate then [CSS.cardDragIndicate] else []
       , draggable (not s.editing)
         -- ALL the drag events...
-      , onDragStart \e -> Just (DragStart e)
-      , onDragEnd \e -> Just (DragEnd e)
-      , onDragOver \e -> Just (DragIndicate e true)
-      , onDragEnter \e -> Just (DragIndicate e true)
-      , onDragLeave \e -> Just (DragIndicate e false)
-      , onDrop \e -> Just (Drop e)
-      , onClick \_ -> Just StartEditing ]
-  [ input [ id_ (s.id <> "_in")
+      , onDragStart \e -> DragStart e
+      , onDragEnd \e -> DragEnd e
+      , onDragOver \e -> DragIndicate e true
+      , onDragEnter \e -> DragIndicate e true
+      , onDragLeave \e -> DragIndicate e false
+      , onDrop \e -> Drop e
+      , onClick \_ -> StartEditing ]
+  [ input [ id (s.id <> "_in")
           , classes inputClasses
-          , onValueChange (Just <<< Edited)
+          , onValueChange Edited
           , onKeyUp catchEnter
           , onKeyDown catchEscape
           -- KEYBOARD NAVIGATION NOT WORKING YET...
           -- , tabIndex 0
-          -- , onFocus \_ -> Just StartEditing
-          , onBlur \_ -> if s.editing then Just Accept else Nothing
+          -- , onFocus \_ -> StartEditing
+          , onBlur \_ -> if s.editing then Accept else DoNothing
           , value s.edit ]
   , div [ classes divClasses ] [text s.title]
   , a [ class_ CSS.cardMenu
       , href "#"
-      , onClick \_ -> Just DeleteCard ] [text "..."]
+      , onClick \_ -> DeleteCard ] [text "..."]
   ]
   where inputClasses = if s.editing then [] else [CSS.hidden]
         divClasses = [CSS.cardInner] <> if s.editing then [CSS.hidden] else []
@@ -111,6 +111,8 @@ handleAction :: forall m. MonadEffect m => Action -> HalogenM State Action () Ou
 handleAction action = do
   s <- get
   case action of
+    DoNothing -> pure unit
+
     StartEditing ->
       when (not s.editing) do
         modify_ \st -> st { edit = s.title, editing = true }
@@ -155,7 +157,7 @@ encodeDragData :: State -> String
 encodeDragData s = stringify (encodeJson { id: s.id, title: s.title })
 
 decodeDragData :: String -> Maybe Card
-decodeDragData = hush <<< (jsonParser >=> decodeJson)
+decodeDragData = hush <<< (parseJson >=> decodeJson)
 
 cardDragData :: DragEvent -> Effect (Maybe Card)
 cardDragData ev = decodeDragData <$> getData mtype (dataTransfer ev)

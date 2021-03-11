@@ -2,22 +2,28 @@ module Canbando.Model.List where
 
 import Prelude
 
-import Canbando.Model.Card (Card)
 import Canbando.Capability.IdSupply (class IdSupply, genId)
+import Canbando.Model.Card (Card)
+import Canbando.Model.Card as Card
+import Data.Argonaut (Json, encodeJson)
 
 
 type Id = String
 
-type ListRep row =
+type ListRep cardrep row =
   ( id :: Id
   , name :: String
-  , nextID :: Int
-  , cards :: Array Card
+  , cards :: Array cardrep
   | row )
 
-type List = { | ListRep () }
+type List = { | ListRep Card () }
+
+type ListStore = { | ListRep Card.Id () }
+
+encode :: List -> Json
+encode { id, name, cards } = encodeJson { id, name, cards: map _.id cards }
 
 newList :: forall m. IdSupply m => m List
 newList = do
   newId <- genId 'L'
-  pure { id: newId, name: "New list", nextID: 1, cards: [] }
+  pure { id: newId, name: "New list", cards: [] }

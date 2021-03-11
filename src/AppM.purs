@@ -35,6 +35,9 @@ instance idSupplyAppM :: IdSupply AppM where
   genId = hashId
 
 instance manageListAppM :: ManageList AppM where
+  updateList id lst = do
+    traceM $ "UPDATE-LIST " <> id
+    pure $ Just lst
   deleteList id = traceM $ "DELETE-LIST " <> id
   moveCard card id idx = traceM $ "MOVE-CARD " <> card.id <> " -> " <> id <> " @ " <> show idx
   addCard id = do

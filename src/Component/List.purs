@@ -18,13 +18,13 @@ import Canbando.Model.Card (Id) as Card
 import Canbando.Model.List (Id, ListRep, List)
 import Data.Array (deleteAt, filter, findIndex, insertAt)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Symbol (SProxy(..))
 import Effect.Class (class MonadEffect)
 import Halogen (Component, ComponentHTML, HalogenM, defaultEval, gets, liftEffect, mkComponent, mkEval, modify_, raise)
 import Halogen as H
-import Halogen.HTML (HTML, button, div, h1, slot, text)
+import Halogen.HTML (button, div, h1, slot, text)
 import Halogen.HTML.Events (onClick, onDragEnter, onDragLeave, onDragOver, onDrop)
 import Halogen.HTML.Properties (class_, classes)
+import Type.Proxy (Proxy(..))
 import Web.Event.Event (preventDefault)
 import Web.HTML.Event.DragEvent (DragEvent, toEvent)
 
@@ -34,7 +34,7 @@ type StateInfo =
   , editing :: Boolean
   , lastMoveLocal :: Boolean )
 
-type State = { | ListRep StateInfo }
+type State = { | ListRep Card StateInfo }
 
 data Output
   = ListDeleted Id
@@ -45,7 +45,7 @@ data Direction = Left | Right
 data Action
   = AddCard
   | CardAction Card.Output
-  | Editing EditAction
+  | Editing (Maybe EditAction)
   | DragOver DragEvent
   | Drop DragEvent
   | Delete
@@ -55,8 +55,8 @@ type Slot id = forall query. H.Slot query Output id
 
 type Slots = ( card :: Card.Slot Card.Id )
 
-_card :: SProxy "card"
-_card = SProxy
+_card :: Proxy "card"
+_card = Proxy
 
 
 component ::
@@ -64,7 +64,7 @@ component ::
   MonadEffect m =>
   ManageList m =>
   IdSupply m =>
-  Component HTML query List Output m
+  Component query List Output m
 component = mkComponent
        { initialState
        , render
@@ -73,8 +73,8 @@ component = mkComponent
 
 
 initialState :: List -> State
-initialState { name, id, nextID, cards } =
-  { name: name, id, nextID, cards
+initialState { name, id, cards } =
+  { name: name, id, cards
   , edit: "", editing: false, lastMoveLocal: false }
 
 
@@ -82,23 +82,23 @@ render :: forall m. MonadEffect m => State -> ComponentHTML Action Slots m
 render s =
   div [classes [ CSS.bgLight, CSS.p3, CSS.rounded, CSS.listWrapper
                , CSS.flexGrow0, CSS.flexShrink0 ]
-      , onDragOver \e -> Just (DragOver e)
-      , onDragEnter \e -> Just (DragOver e)
-      , onDragLeave \e -> Just (DragOver e)
-      , onDrop \e -> Just (Drop e) ]
+      , onDragOver \e -> DragOver e
+      , onDragEnter \e -> DragOver e
+      , onDragLeave \e -> DragOver e
+      , onDrop \e -> Drop e ]
   [div [ class_ CSS.listMenu ]
-   [ iconButton "bi-chevron-left" \_ -> Just (Move Left)
-   , iconButton "bi-chevron-right" \_ -> Just (Move Right)
+   [ iconButton "bi-chevron-left" \_ -> Move Left
+   , iconButton "bi-chevron-right" \_ -> Move Right
    , text " "
-   , iconButton "bi-x-circle" \_ -> Just Delete
+   , iconButton "bi-x-circle" \_ -> Delete
    ],
    editableWith [CSS.formControlLG] h1 Editing s,
    div [classes [CSS.dFlex, CSS.flexColumn]] cards,
-   button [classes [CSS.rounded, CSS.addNewCard], onClick \_ -> Just AddCard]
+   button [classes [CSS.rounded, CSS.addNewCard], onClick \_ -> AddCard]
      [ icon "bi-plus-circle", text "Add new card"]
    ]
   where cards = map onecard s.cards
-        onecard crd = slot _card crd.id Card.component crd (Just <<< CardAction)
+        onecard crd = slot _card crd.id Card.component crd CardAction
 
 
 handleAction ::
@@ -113,7 +113,9 @@ handleAction action =
       card <- newCard
       modify_ \s -> s { cards = s.cards <> [card] }
 
-    Editing editAction -> do
+    Editing Nothing -> pure unit
+
+    Editing (Just editAction) -> do
       Editable.handleAction editAction >>= case _ of
         Just s -> pure unit -- raise $ ListTitleChanged s
         _ -> pure unit

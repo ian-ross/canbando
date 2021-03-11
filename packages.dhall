@@ -118,10 +118,20 @@ let additions =
 -}
 
 let upstream =
-      https://github.com/purescript/package-sets/releases/download/psc-0.13.8-20200615/packages.dhall sha256:5d0cfad9408c84db0a3fdcea2d708f9ed8f64297e164dc57a7cf6328706df93a
+      https://github.com/purescript/package-sets/releases/download/psc-0.14.0-20210309/packages.dhall sha256:585332a8a11c6420d7287943f81bc2121746cdd352f2cf3f5ecf65053f2afcd3
 
 let overrides = {=}
 
-let additions = {=}
+let additions =
+  { localforage =
+      { dependencies =
+          [ "prelude"
+          , "aff"
+          , "foreign"
+          ]
+      , repo = "https://github.com/ian-ross/purescript-localforage.git"
+      , version = "psc-0.14.0"
+      }
+  }
 
 in  upstream // overrides // additions

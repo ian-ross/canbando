@@ -13,12 +13,12 @@ import Canbando.Model.List (List, newList)
 import Canbando.State (BoardState, done, inProgress, todo)
 import Data.Array (deleteAt, filter, findIndex, insertAt, length, (!!))
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Symbol (SProxy(..))
 import Effect.Class (class MonadEffect)
 import Halogen (Component, ComponentHTML, HalogenM, defaultEval, mkComponent, mkEval, modify_)
-import Halogen.HTML (HTML, button, div, div_, main, slot, text)
+import Halogen.HTML (button, div, div_, main, slot, text)
 import Halogen.HTML.Events (onClick)
 import Halogen.HTML.Properties (class_, classes)
+import Type.Proxy (Proxy(..))
 
 
 data Action
@@ -27,18 +27,18 @@ data Action
 
 type Slots = ( list :: List.Slot List.Id )
 
-_list :: SProxy "list"
-_list = SProxy
+_list :: Proxy "list"
+_list = Proxy
 
 component ::
   forall q i o m.
   MonadEffect m =>
   ManageList m =>
   IdSupply m =>
-  Component HTML q i o m
+  Component q i o m
 component =
   mkComponent
-    { initialState: \_ -> { nextID: 1, lists: [ todo, inProgress, done ] }
+    { initialState: \_ -> { lists: [ todo, inProgress, done ] }
     , render
     , eval: mkEval $ defaultEval { handleAction = handleAction }
     }
@@ -51,7 +51,7 @@ wrap lists =
     lists <>
     [button [classes [ CSS.rounded, CSS.addNewList
                      , CSS.flexGrow0, CSS.flexShrink0],
-             onClick \_ -> Just AddList]
+             onClick \_ -> AddList]
      [icon "bi-plus-circle", text "Add new list"]]
   ]
 
@@ -63,7 +63,7 @@ render ::
   BoardState -> ComponentHTML Action Slots m
 render state = div_ [header, wrap lists]
   where lists = map onelist state.lists
-        onelist lst = slot _list lst.id List.component lst (Just <<< ListAction)
+        onelist lst = slot _list lst.id List.component lst ListAction
 
 handleAction ::
   forall cs o m.
