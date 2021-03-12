@@ -1,6 +1,6 @@
 module Canbando.Model.List
        ( Id, List, ListRep
-       , encode, toList
+       , encode, toList, toListStore
        , newList
        ) where
 
@@ -26,6 +26,9 @@ type ListStore = { | ListRep Card.Id () }
 
 toList :: forall row. { | ListRep Card row } -> List
 toList lst = { id: lst.id, name: lst.name, cards: lst.cards }
+
+toListStore :: forall row. { | ListRep Card row } -> ListStore
+toListStore lst = { id: lst.id, name: lst.name, cards: map _.id lst.cards }
 
 encode :: List -> Json
 encode { id, name, cards } = encodeJson { id, name, cards: map _.id cards }

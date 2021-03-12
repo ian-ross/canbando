@@ -1,4 +1,7 @@
-module Canbando.Capability.IdSupply (class IdSupply, genId, hashId) where
+module Canbando.Capability.IdSupply (
+  class IdSupply, IdSource,
+  genId, hashId
+) where
 
 import Prelude
 
@@ -10,6 +13,7 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref (Ref, modify)
 import Halogen (HalogenM, lift)
 
+type IdSource row = { idSupply :: Ref Int | row }
 
 class (Monad m) <= IdSupply m where
   genId :: Char -> m String
@@ -21,7 +25,7 @@ instance idSupplyHalogenM ::
 
 hashId ::
   forall m r.
-  MonadAsk { idSupply :: Ref Int | r } m =>
+  MonadAsk (IdSource r) m =>
   MonadEffect m =>
   Char -> m String
 hashId pfx = do
