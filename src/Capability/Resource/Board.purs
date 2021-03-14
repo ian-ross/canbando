@@ -29,7 +29,7 @@ class Monad m <= ManageBoard m where
   deleteList :: Id {- boardId -} -> Id {- listId -} -> m Unit
 
 
-instance manageBoardAppM :: (Monad m, IdSupply m, Store m) => ManageBoard m where
+instance manageBoardM :: (Monad m, IdSupply m, Store m) => ManageBoard m where
   addBoard = do
     -- TODO: TEST!!!
     newId <- genId 'B'

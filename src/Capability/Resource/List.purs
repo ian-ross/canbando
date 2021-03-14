@@ -39,7 +39,7 @@ class Monad m <= ManageList m where
   deleteCard :: Id {- cardId -} -> m Unit
 
 
-instance manageListAppM :: (Monad m, IdSupply m, Store m) => ManageList m where
+instance manageListM :: (Monad m, IdSupply m, Store m) => ManageList m where
   updateList listId list = setItem listId (toListStore list)
 
   moveCard cardId toListId idx = const unit <$> runMaybeT do
