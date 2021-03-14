@@ -2,16 +2,14 @@ module Canbando.Capability.Store where
 
 import Prelude
 
-import Data.Either (Either)
-import Effect.Exception (Error)
-import Foreign (Foreign)
+import Data.Maybe (Maybe)
 
 
 class (Monad m) <= Store m where
-  clearStore :: m (Either Error Unit)
-  setItem :: String -> Foreign -> m (Either Error Foreign)
-  removeItem :: String -> m (Either Error Unit)
-  getItem :: String -> m (Either Error Foreign)
+  clearStore :: m Unit
+  setItem :: forall a. String -> a -> m Unit
+  removeItem :: String -> m Unit
+  getItem :: forall a. String -> m (Maybe a)
 
 
 -- Cards

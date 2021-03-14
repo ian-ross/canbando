@@ -1,6 +1,6 @@
 module Canbando.Capability.IdSupply (
   class IdSupply, IdSource,
-  genId, hashId
+  genId, hashId, mkId
 ) where
 
 import Prelude
@@ -15,7 +15,7 @@ import Halogen (HalogenM, lift)
 
 type IdSource row = { idSupply :: Ref Int | row }
 
-class (Monad m) <= IdSupply m where
+class Monad m <= IdSupply m where
   genId :: Char -> m String
 
 instance idSupplyHalogenM ::
@@ -33,3 +33,9 @@ hashId pfx = do
   let raw = toUpper $ toBase 16 $ fromInt id
       pad = power "0" (8 - length raw)
   pure $ singleton (codePointFromChar pfx) <> pad <> raw
+
+mkId :: Char -> Int -> String
+mkId pfx id =
+  let raw = toUpper $ toBase 16 $ fromInt id
+      pad = power "0" (8 - length raw)
+  in singleton (codePointFromChar pfx) <> pad <> raw

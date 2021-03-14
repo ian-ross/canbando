@@ -6,7 +6,8 @@ module Canbando.Component.Card (
 import Prelude hiding (div)
 
 import Canbando.CSS as CSS
-import Canbando.Model.Card (Card, CardRep, Id, toCard)
+import Canbando.Model.Card (Card, CardRep, toCard)
+import Canbando.Model.Id (Id)
 import Canbando.Util (focusElement)
 import Data.Argonaut (decodeJson, encodeJson, parseJson, stringify)
 import Data.Either (hush)
@@ -21,7 +22,7 @@ import Halogen.HTML.Events (onBlur, onClick, onDragEnd, onDragEnter, onDragLeave
 import Halogen.HTML.Properties (class_, classes, draggable, href, id, value)
 import Web.Event.Event (preventDefault, stopPropagation)
 import Web.HTML.Event.DataTransfer (DropEffect(..), dropEffect, getData, setData)
-import Web.HTML.Event.DragEvent (DragEvent, dataTransfer)
+import Web.HTML.Event.DragEvent (DragEvent, dataTransfer, toEvent)
 import Web.HTML.Event.DragEvent as DE
 import Web.UIEvent.KeyboardEvent (KeyboardEvent, key)
 import Web.UIEvent.MouseEvent (MouseEvent)
@@ -152,6 +153,7 @@ handleAction action = do
 
     Drop ev -> do
       modify_ \st -> st { dragging = false, dragIndicate = false }
+      liftEffect $ stopPropagation $ toEvent ev
       liftEffect (cardDragData ev) >>= case _ of
         Nothing -> pure unit
         Just f -> raise (CardMoved f s.id)

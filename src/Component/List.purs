@@ -13,8 +13,8 @@ import Canbando.Component.Editable (EditAction, editableWith)
 import Canbando.Component.Editable as Editable
 import Canbando.Component.Icon (icon, iconButton)
 import Canbando.Model.Card (Card)
-import Canbando.Model.Card (Id) as Card
-import Canbando.Model.List (Id, List, ListRep, toList)
+import Canbando.Model.Id (Id)
+import Canbando.Model.List (List, ListRep, toList)
 import Data.Array (deleteAt, filter, findIndex, insertAt)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Effect.Class (class MonadEffect)
@@ -52,7 +52,7 @@ data Action
 
 type Slot id = forall query. H.Slot query Output id
 
-type Slots = ( card :: Card.Slot Card.Id )
+type Slots = ( card :: Card.Slot Id )
 
 _card :: Proxy "card"
 _card = Proxy
@@ -110,8 +110,9 @@ handleAction ::
 handleAction action =
   case action of
     AddCard -> do
-      card <- lift <<< addCard =<< gets _.id
-      modify_ \s -> s { cards = s.cards <> [card] }
+      (lift <<< addCard =<< gets _.id) >>= case _ of
+        Nothing -> pure unit
+        Just card -> modify_ \s -> s { cards = s.cards <> [card] }
 
     Editing Nothing -> pure unit
 
@@ -142,24 +143,24 @@ handleAction action =
               modify_ \s -> s { cards = insertCard 0 from s.cards }
             Just _ -> modify_ \s -> s { lastMoveLocal = true }
 
-    CardAction (Card.CardUpdated id card) ->
-      lift $ updateCard id card
+    CardAction (Card.CardUpdated cardId card) ->
+      lift $ updateCard cardId card
 
-    CardAction (Card.CardDeleted id) -> do
+    CardAction (Card.CardDeleted cardId) -> do
       st <- get
       if st.lastMoveLocal
       then modify_ \s -> s { lastMoveLocal = false }
       else do
-        lift $ deleteCard id
-        modify_ \s -> s { cards = filter (\c -> c.id /= id) s.cards
+        lift $ deleteCard cardId
+        modify_ \s -> s { cards = filter (\c -> c.id /= cardId) s.cards
                         , lastMoveLocal = false }
 
-    CardAction (Card.CardDeletedByMove id) -> do
+    CardAction (Card.CardDeletedByMove cardId) -> do
       st <- get
       if st.lastMoveLocal
       then modify_ \s -> s { lastMoveLocal = false }
       else do
-        modify_ \s -> s { cards = filter (\c -> c.id /= id) s.cards
+        modify_ \s -> s { cards = filter (\c -> c.id /= cardId) s.cards
                         , lastMoveLocal = false }
 
     CardAction (Card.CardMoved from to) -> do
@@ -179,5 +180,5 @@ handleAction action =
 insertCard :: Int -> Card -> Array Card -> Array Card
 insertCard idx card cards = fromMaybe cards $ insertAt idx card cards
 
-findCard :: Card.Id -> Array Card -> Maybe Int
+findCard :: Id -> Array Card -> Maybe Int
 findCard id cards = findIndex (\c -> c.id == id) cards

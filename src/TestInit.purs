@@ -4,50 +4,53 @@ import Prelude
 
 import Canbando.AppM (AppM)
 import Canbando.Capability.IdSupply (genId)
+import Canbando.Capability.Resource.Board (getBoard, getBoards)
 import Canbando.Capability.Store (setItem)
 import Canbando.Model.Board (Board)
 import Canbando.Model.Card (Card)
+import Canbando.Model.Id (Id)
 import Canbando.Model.List (List)
-import Data.Traversable (traverse)
-import Foreign (unsafeToForeign)
+import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
+import Data.Array (head)
+import Data.Maybe (Maybe(..))
+import Data.Traversable (sequence, traverse)
 
 
 initTestStore :: AppM Board
 initTestStore = do
+  runMaybeT do
+    boardId <- MaybeT $ head <$> getBoards
+    MaybeT $ getBoard boardId
+  >>= case _ of
+    Nothing -> doInitTestStore
+    Just b -> pure b
+
+doInitTestStore :: AppM Board
+doInitTestStore = do
   id <- genId 'B'
-  list1 <- todo
-  list2 <- inProgress
-  list3 <- done
-  let saveBoard =
-        { id
-        , name: "Test board"
-        , lists: [list1.id, list2.id, list3.id] }
-  _ <- setItem id (unsafeToForeign saveBoard)
-  pure { id
-        , name: "Test board"
-        , lists: [list1, list2, list3] }
+  lists <- sequence [todo, inProgress, done]
+  setItem id { id, name: "Test board", lists: map _.id lists }
+  setItem "root" [id]
+  pure { id, name: "Test board", lists }
 
 initList :: String -> Array String -> AppM List
 initList name cardNames = do
   id <- genId 'L'
-  cards <- traverse initCard cardNames
-  let saveList = { id, name, cards: map _.id cards }
-      retList = { id, name, cards }
-  _ <- setItem id (unsafeToForeign saveList)
-  pure retList
+  cards <- traverse (initCard id) cardNames
+  setItem id { id, name, cards: map _.id cards }
+  pure { id, name, cards }
 
-initCard :: String -> AppM Card
-initCard title = do
+initCard :: Id -> String -> AppM Card
+initCard list title = do
   id <- genId 'C'
-  let card = { id, title }
-  _ <- setItem id (unsafeToForeign card)
-  pure card
+  setItem id { id, title, list }
+  pure { id, title }
 
 todo :: AppM List
-todo = initList "To Do" [ "Task #3", "Task #4", "Task #5", "Task #6", "Task #7" ]
+todo = initList "To Do" ["Task #3", "Task #4", "Task #5", "Task #6", "Task #7"]
 
 inProgress :: AppM List
-inProgress = initList "In progress" [ "Task #1", "Task #2" ]
+inProgress = initList "In progress" ["Task #1", "Task #2"]
 
 done :: AppM List
 done = initList "Done" []

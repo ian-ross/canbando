@@ -1,17 +1,12 @@
 module Canbando.Model.Card
-       ( Id, Card, CardRep
-       , encode, decode, toCard
-       , newCard
+       ( Card, CardRep, CardStore
+       , encode, decode, toCard, toCardStore
        ) where
 
-import Prelude
-
-import Canbando.Capability.IdSupply (class IdSupply, genId)
+import Canbando.Model.Id (Id)
 import Data.Argonaut (Json, JsonDecodeError, decodeJson, encodeJson)
 import Data.Either (Either)
 
-
-type Id = String
 
 type CardRep row =
   ( id :: Id
@@ -19,6 +14,8 @@ type CardRep row =
   | row )
 
 type Card = { | CardRep () }
+
+type CardStore = { | CardRep ( list :: Id ) }
 
 encode :: Card -> Json
 encode = encodeJson
@@ -29,7 +26,5 @@ decode = decodeJson
 toCard :: forall row. { | CardRep row } -> Card
 toCard card = { id: card.id, title: card.title }
 
-newCard :: forall m. IdSupply m => m Card
-newCard = do
-  newId <- genId 'C'
-  pure { id: newId, title: "New card" }
+toCardStore :: Card -> Id -> CardStore
+toCardStore { id, title } list = { id, title, list }
