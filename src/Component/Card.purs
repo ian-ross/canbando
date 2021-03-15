@@ -82,7 +82,7 @@ render :: forall cs m. State -> ComponentHTML Action cs m
 render s =
   div [ id s.id
       , classes $
-        [CSS.card] <>
+        [CSS.card, CSS.listCard] <>
         if s.dragging then [CSS.cardDragging] else [] <>
         if s.dragIndicate then [CSS.cardDragIndicate] else []
       , draggable (not s.editing)

@@ -2,7 +2,13 @@
 --
 -- Error handling: see `Canbando.Capability.Resource.List`.
 
-module Canbando.Capability.Resource.Board where
+module Canbando.Capability.Resource.Board (
+  class ManageBoard,
+  addBoard,
+  getBoards, getBoardStore, getBoard,
+  deleteBoard, moveList, addList, deleteList,
+  initialBoards
+) where
 
 import Prelude
 
@@ -15,19 +21,24 @@ import Canbando.Model.List (List, ListStore, toListStore)
 import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Control.Monad.Trans.Class (lift)
 import Data.Array (delete, insertAt)
-import Data.Maybe (Maybe, fromMaybe)
+import Data.Maybe (Maybe, fromMaybe, maybe)
 import Data.Traversable (sequence, traverse, traverse_)
 
 
 class Monad m <= ManageBoard m where
   addBoard :: m Board
   getBoards :: m (Array Id)
+  getBoardStore :: Id {- boardId -} -> m (Maybe BoardStore)
   getBoard :: Id {- boardId -} -> m (Maybe Board)
   deleteBoard :: Id {- boardId -} -> m Unit
   moveList :: Id {- boardId -} -> Id {- listId -} -> Int {- index -} -> m Unit
   addList :: Id {- boardId -} -> m (Maybe List)
   deleteList :: Id {- boardId -} -> Id {- listId -} -> m Unit
 
+
+initialBoards :: forall m. ManageBoard m => m (Array BoardStore)
+initialBoards =
+  getBoards >>= traverse getBoardStore <#> sequence <#> maybe [] identity
 
 instance manageBoardM :: (Monad m, IdSupply m, Store m) => ManageBoard m where
   addBoard = do
@@ -41,9 +52,11 @@ instance manageBoardM :: (Monad m, IdSupply m, Store m) => ManageBoard m where
 
   getBoards = fromMaybe [] <$> getItem "root"
 
+  getBoardStore boardId = getItem boardId
+
   getBoard boardId =
     runMaybeT do
-      board :: BoardStore <- MaybeT $ getItem boardId
+      board <- MaybeT $ getBoardStore boardId
       oklists :: Array ListStore <- MaybeT $ sequence <$> traverse getItem board.lists
       let getCards list =
             sequence <$> traverse getItem list.cards <#>

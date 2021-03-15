@@ -48,11 +48,25 @@ main > .container-fluid {
   width: 300px;
 }
 
-.card {
+.list-card {
   position: relative;
   margin-bottom: 10px;
   border-radius: 0;
   padding: 8px;
+}
+
+.board-tile {
+  position: relative;
+  width: 250px;
+  height: 150px;
+  margin: 20px;
+  padding: 8px;
+}
+
+.tile-inner {
+  padding: 10px;
+  font-weight: bold;
+  font-size: 24px;
 }
 
 .card-dragging {

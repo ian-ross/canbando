@@ -24,6 +24,9 @@ bgLight = ClassName "bg-light"
 bgSecondary ::ClassName
 bgSecondary = ClassName "bg-secondary"
 
+listCard :: ClassName
+listCard = ClassName "list-card"
+
 card :: ClassName
 card = ClassName "card"
 
@@ -38,6 +41,12 @@ cardDragIndicate = ClassName "card-drag-indicate"
 
 cardMenu :: ClassName
 cardMenu = ClassName "card-menu"
+
+boardTile :: ClassName
+boardTile = ClassName "board-tile"
+
+tileInner :: ClassName
+tileInner = ClassName "tile-inner"
 
 containerFluid :: ClassName
 containerFluid = ClassName "container-fluid"
