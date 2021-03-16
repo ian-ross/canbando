@@ -2,28 +2,33 @@ module Canbando.Page.Home where
 
 import Prelude hiding (div)
 
+import Canbando.CSS as CSS
 import Canbando.Capability.IdSupply (class IdSupply)
 import Canbando.Capability.Navigate (class Navigate)
-import Canbando.Capability.Resource.Board (class ManageBoard, loadBoards)
+import Canbando.Capability.Resource.Board (class ManageBoard, addBoard, loadBoards)
 import Canbando.Capability.Store (class Store)
 import Canbando.Component.BoardTile as BoardTile
 import Canbando.Component.Header (header)
-import Canbando.Model.Board (BoardStore)
+import Canbando.Component.Icon (icon)
+import Canbando.Model.Board (BoardStore, toBoardStore)
 import Canbando.Model.Id (Id)
-import Canbando.Util (wrap)
+import Canbando.Util (containerRow, wrapCol)
 import Control.Monad.Trans.Class (lift)
+import Data.Array (cons, snoc)
 import Data.Maybe (Maybe(..))
 import Effect.Class (class MonadEffect)
-import Halogen (Component, ComponentHTML, HalogenM, defaultEval, mkComponent, mkEval, put)
+import Halogen (Component, ComponentHTML, HalogenM, defaultEval, mkComponent, mkEval, modify_, put)
 import Halogen as H
-import Halogen.HTML (div_, slot, text)
+import Halogen.HTML (button, div_, slot, text)
+import Halogen.HTML.Events (onClick)
+import Halogen.HTML.Properties (classes)
 import Network.RemoteData (RemoteData(..))
 import Type.Proxy (Proxy(..))
 
 
 data Action
   = Initialize
-  | TileAction BoardTile.Output
+  | AddBoard
 
 type State = RemoteData String (Array BoardStore)
 
@@ -60,8 +65,15 @@ render state = div_ [header "Canbando!", contents]
                NotAsked -> text "Not asked yet!"
                Loading -> text "Loading..."
                Failure err -> text $ "FAILED: " <> err
-               Success ts -> wrap (map onetile ts)
-        onetile brd = slot _tile brd.id BoardTile.component brd TileAction
+               Success ts -> wrapCol (addBoardButton `cons`
+                                      [containerRow (map onetile ts)])
+        onetile brd = slot _tile brd.id BoardTile.component brd absurd
+        addBoardButton =
+          button [classes [ CSS.btn, CSS.btnSecondary
+                          , CSS.rounded, CSS.addNewBoard
+                          , CSS.flexGrow0, CSS.flexShrink0],
+                  onClick (const AddBoard)]
+          [icon "bi-plus-circle", text "Add new board"]
 
 handleAction ::
   forall cs o m.
@@ -75,4 +87,6 @@ handleAction = case _ of
     put Loading
     boards <- lift loadBoards
     put $ Success boards
-  TileAction act -> pure unit
+  AddBoard -> do
+    brd <- toBoardStore <$> lift addBoard
+    modify_ \s -> (_ `snoc` brd) <$> s

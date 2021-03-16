@@ -1,6 +1,7 @@
 module Canbando.Util
   ( blurTarget, focusElement
-  , wrap
+  , wrap, wrapCol
+  , containerRow, containerCol
   ) where
 
 import Prelude hiding (div)
@@ -19,8 +20,20 @@ foreign import focusElement :: String -> Effect Unit
 
 wrap :: forall act cs m. Array (ComponentHTML act cs m) -> ComponentHTML act cs m
 wrap content =
-  main [class_ CSS.flexShrink0]
-  [div [classes [ CSS.containerFluid, CSS.dFlex
+  main [class_ CSS.flexShrink0] [containerRow content]
+
+containerRow :: forall act cs m. Array (ComponentHTML act cs m) -> ComponentHTML act cs m
+containerRow content =
+  div [classes [ CSS.containerFluid, CSS.dFlex
                 , CSS.flexRow, CSS.alignItemsStart ] ]
-    content
-  ]
+  content
+
+wrapCol :: forall act cs m. Array (ComponentHTML act cs m) -> ComponentHTML act cs m
+wrapCol content =
+  main [class_ CSS.flexShrink0] [containerCol content]
+
+containerCol :: forall act cs m. Array (ComponentHTML act cs m) -> ComponentHTML act cs m
+containerCol content =
+  div [classes [ CSS.containerFluid, CSS.dFlex
+                , CSS.flexColumn, CSS.alignItemsStart ] ]
+  content

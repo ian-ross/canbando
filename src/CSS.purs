@@ -12,6 +12,9 @@ addNewCard = ClassName "add-new-card"
 addNewList :: ClassName
 addNewList = ClassName "add-new-list"
 
+addNewBoard :: ClassName
+addNewBoard = ClassName "add-new-board"
+
 alignItemsStart :: ClassName
 alignItemsStart = ClassName "align-items-start"
 
@@ -23,6 +26,15 @@ bgLight = ClassName "bg-light"
 
 bgSecondary ::ClassName
 bgSecondary = ClassName "bg-secondary"
+
+btn :: ClassName
+btn = ClassName "btn"
+
+btnPrimary :: ClassName
+btnPrimary = ClassName "btn-primary"
+
+btnSecondary :: ClassName
+btnSecondary = ClassName "btn-secondary"
 
 listCard :: ClassName
 listCard = ClassName "list-card"

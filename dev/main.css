@@ -48,6 +48,15 @@ main > .container-fluid {
   width: 300px;
 }
 
+.add-new-board {
+  width: 250px;
+  height: 60px;
+  margin-left: 30px;
+  margin-top: 10px;
+  margin-bottom: 20px;
+  padding: 8px;
+}
+
 .list-card {
   position: relative;
   margin-bottom: 10px;

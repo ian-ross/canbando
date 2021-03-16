@@ -1,4 +1,6 @@
-module Canbando.Component.BoardTile where
+module Canbando.Component.BoardTile
+  ( Slot, component
+  ) where
 
 import Prelude hiding (div)
 
@@ -16,11 +18,9 @@ import Halogen.HTML.Properties (class_, classes)
 
 type State = { id :: Id, name :: String }
 
-data Output = BoardTileClicked Id
-
 data Action = Clicked
 
-type Slot id = forall query. H.Slot query Output id
+type Slot id = forall query. H.Slot query Void id
 
 initialState :: BoardStore -> State
 initialState bs = { id: bs.id, name: bs.name }
@@ -28,7 +28,7 @@ initialState bs = { id: bs.id, name: bs.name }
 component ::
   forall query m.
   Navigate m =>
-  Component query BoardStore Output m
+  Component query BoardStore Void m
 component =
   mkComponent
   { initialState: initialState
