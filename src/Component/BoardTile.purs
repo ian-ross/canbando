@@ -2,16 +2,16 @@ module Canbando.Component.BoardTile where
 
 import Prelude hiding (div)
 
-import Debug.Trace (traceM)
-import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, mkComponent, mkEval)
+import Canbando.CSS as CSS
+import Canbando.Capability.Navigate (class Navigate, navigate)
+import Canbando.Model.Board (BoardStore)
+import Canbando.Model.Id (Id)
+import Canbando.Routes (Route(..))
+import Halogen (Component, ComponentHTML, HalogenM, defaultEval, gets, mkComponent, mkEval)
 import Halogen as H
 import Halogen.HTML (div, text)
 import Halogen.HTML.Events (onClick)
 import Halogen.HTML.Properties (class_, classes)
-
-import Canbando.CSS as CSS
-import Canbando.Model.Board (BoardStore)
-import Canbando.Model.Id (Id)
 
 
 type State = { id :: Id, name :: String }
@@ -26,7 +26,9 @@ initialState :: BoardStore -> State
 initialState bs = { id: bs.id, name: bs.name }
 
 component ::
-  forall query m. Component query BoardStore Output m
+  forall query m.
+  Navigate m =>
+  Component query BoardStore Output m
 component =
   mkComponent
   { initialState: initialState
@@ -41,10 +43,9 @@ render s =
   [ div [ class_ CSS.tileInner ] [ text s.name ] ]
 
 handleAction ::
-  forall cs o m. Action -> HalogenM State Action cs o m Unit
+  forall cs o m.
+  Navigate m =>
+  Action -> HalogenM State Action cs o m Unit
 handleAction =
   case _ of
-    Clicked -> do
-      s <- get
-      traceM $ "CLICKED " <> s.id
-      pure unit
+    Clicked -> navigate <<< Board =<< gets _.id

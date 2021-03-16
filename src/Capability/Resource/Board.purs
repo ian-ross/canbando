@@ -7,7 +7,7 @@ module Canbando.Capability.Resource.Board (
   addBoard,
   getBoards, getBoardStore, getBoard,
   deleteBoard, moveList, addList, deleteList,
-  initialBoards
+  loadBoards
 ) where
 
 import Prelude
@@ -36,8 +36,8 @@ class Monad m <= ManageBoard m where
   deleteList :: Id {- boardId -} -> Id {- listId -} -> m Unit
 
 
-initialBoards :: forall m. ManageBoard m => m (Array BoardStore)
-initialBoards =
+loadBoards :: forall m. ManageBoard m => m (Array BoardStore)
+loadBoards =
   getBoards >>= traverse getBoardStore <#> sequence <#> maybe [] identity
 
 instance manageBoardM :: (Monad m, IdSupply m, Store m) => ManageBoard m where

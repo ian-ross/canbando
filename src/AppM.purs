@@ -21,6 +21,11 @@ module Canbando.AppM (AppM(..), runApp) where
 
 import Prelude
 
+import Canbando.Capability.IdSupply (class IdSupply, mkId)
+import Canbando.Capability.Navigate (class Navigate)
+import Canbando.Capability.Store (class Store, getItem, setItem)
+import Canbando.Env (Env)
+import Canbando.Routes (route)
 import Control.Monad.Reader.Trans (class MonadAsk, ReaderT, asks, runReaderT)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
@@ -28,12 +33,9 @@ import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
 import Foreign (isNull, unsafeFromForeign, unsafeToForeign)
-import Halogen (liftAff)
+import Halogen (liftAff, liftEffect)
 import Localforage as LF
-
-import Canbando.Capability.IdSupply (class IdSupply, mkId)
-import Canbando.Capability.Store (class Store, getItem, setItem)
-import Canbando.Env (Env)
+import Routing.Duplex (print)
 
 
 -- We're using the standard `ReaderT` pattern here: we have a
@@ -142,3 +144,9 @@ run :: forall m a.
        MonadAff m =>
        (LF.Localforage -> Aff a) -> m a
 run f = asks _.store >>= liftAff <<< f
+
+
+instance navigateAppM :: Navigate AppM where
+  navigate r = do
+    nav <- asks _.nav
+    liftEffect $ nav.pushState (unsafeToForeign {}) (print route r)

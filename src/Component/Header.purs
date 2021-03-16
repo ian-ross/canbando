@@ -19,13 +19,13 @@ header name =
              , CSS.fixedTop, CSS.bgLight ]
     ]
     [ div [class_ CSS.containerFluid]
-      [ a [class_ CSS.navbarBrand, href "#"]
+      [ a [class_ CSS.navbarBrand, href "/"]
         [text name]
       , navbarToggler
       , div [class_ CSS.dFlex]
         [ a [ classes [CSS.navLink, CSS.active]
             , attr (AttrName "aria-current") "page"
-            , href "#" ]
+            , href "/" ]
           [ text "Boards" ]
         , avatar "IR"
         ]
