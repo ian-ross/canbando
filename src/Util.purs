@@ -2,6 +2,7 @@ module Canbando.Util
   ( blurTarget, focusElement
   , wrap, wrapCol
   , containerRow, containerCol
+  , dataBsDismiss, dataBsToggle, dataBsTarget
   ) where
 
 import Prelude hiding (div)
@@ -9,8 +10,8 @@ import Prelude hiding (div)
 import Canbando.CSS as CSS
 import Effect (Effect)
 import Halogen (ComponentHTML)
-import Halogen.HTML (div, main)
-import Halogen.HTML.Properties (class_, classes)
+import Halogen.HTML (AttrName(..), div, main)
+import Halogen.HTML.Properties (IProp, attr, class_, classes)
 import Web.Event.Event (Event)
 
 
@@ -37,3 +38,12 @@ containerCol content =
   div [classes [ CSS.containerFluid, CSS.dFlex
                 , CSS.flexColumn, CSS.alignItemsStart ] ]
   content
+
+dataBsDismiss :: forall r i. String -> IProp r i
+dataBsDismiss = attr (AttrName "data-bs-dismiss")
+
+dataBsToggle :: forall r i. String -> IProp r i
+dataBsToggle = attr (AttrName "data-bs-toggle")
+
+dataBsTarget :: forall r i. String -> IProp r i
+dataBsTarget = attr (AttrName "data-bs-target")

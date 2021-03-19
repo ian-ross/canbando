@@ -1,5 +1,5 @@
 module Canbando.Model.Board
-  ( BoardRep, Board, BoardStore
+  ( BoardInfo, BoardLists, BoardRep, Board, BoardStore
   , toBoard, toBoardStore
   , addListToBoard
   ) where
@@ -9,23 +9,39 @@ import Prelude
 import Canbando.Model.Id (Id)
 import Canbando.Model.List (List)
 import Data.Array (snoc)
+import Type.Row (type (+))
 
 
-type BoardRep listrep row =
+type BoardInfo row =
   ( id :: Id
   , name :: String
-  , lists :: Array listrep
+  , bgColour :: String
   | row )
 
-type Board = { | BoardRep List () }
+type BoardLists listrep row =
+  ( lists :: Array listrep
+  | row )
 
-type BoardStore = { | BoardRep Id () }
+type BoardRep listrep row =
+  { | BoardInfo + BoardLists listrep row }
 
-toBoard :: forall row. { | BoardRep List row } -> Board
-toBoard brd = { id: brd.id, name: brd.name, lists: brd.lists }
+type Board = BoardRep List ()
 
-toBoardStore :: forall row. { | BoardRep List row } -> BoardStore
-toBoardStore brd = { id: brd.id, name: brd.name, lists: map _.id brd.lists }
+type BoardStore = BoardRep Id ()
 
-addListToBoard :: forall list row. list -> { | BoardRep list row } -> { | BoardRep list row }
+toBoard :: forall row. BoardRep List row -> Board
+toBoard brd =
+  { id: brd.id
+  , name: brd.name
+  , bgColour: brd.bgColour
+  , lists: brd.lists }
+
+toBoardStore :: forall row. BoardRep List row -> BoardStore
+toBoardStore brd =
+  { id: brd.id
+  , name: brd.name
+  , bgColour: brd.bgColour
+  ,lists: map _.id brd.lists }
+
+addListToBoard :: forall list row. list -> BoardRep list row -> BoardRep list row
 addListToBoard list brd = brd { lists = brd.lists `snoc` list }

@@ -9,10 +9,10 @@ main > .container-fluid {
 
 .avatar {
   position: relative;
-  top: 4px;
   display: inline-block;
   vertical-align: middle;
   margin: 0;
+  margin-left: 15px;
   padding: 0;
   text-align: center;
   text-transform: uppercase;
@@ -27,7 +27,6 @@ main > .container-fluid {
   }
   max-height: 32px;
   width: 32px;
-  height: 100%;
   font-size: 20px;
   line-height: 32px;
 }

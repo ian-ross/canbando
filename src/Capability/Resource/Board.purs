@@ -44,7 +44,7 @@ instance manageBoardM :: (Monad m, IdSupply m, Store m) => ManageBoard m where
   addBoard = do
     -- TODO: TEST!!!
     newId <- genId 'B'
-    let board = { id: newId, name: "New board", lists: [] }
+    let board = { id: newId, name: "New board", bgColour: "white", lists: [] }
     setItem board.id $ toBoardStore board
     root <- fromMaybe [] <$> getItem "root"
     setItem "root" $ root <> [board.id]
@@ -56,13 +56,13 @@ instance manageBoardM :: (Monad m, IdSupply m, Store m) => ManageBoard m where
 
   getBoard boardId =
     runMaybeT do
-      board <- MaybeT $ getBoardStore boardId
-      oklists :: Array ListStore <- MaybeT $ sequence <$> traverse getItem board.lists
+      brd <- MaybeT $ getBoardStore boardId
+      oklists :: Array ListStore <- MaybeT $ sequence <$> traverse getItem brd.lists
       let getCards list =
             sequence <$> traverse getItem list.cards <#>
             map (\cards -> { id: list.id, name: list.name, cards })
       lists <- MaybeT $ sequence <$> traverse getCards oklists
-      pure { id: board.id, name: board.name, lists: lists }
+      pure { id: brd.id, name: brd.name, bgColour: brd.bgColour, lists: lists }
 
   -- TODO: TEST!!!
   deleteBoard boardId = removeItem boardId

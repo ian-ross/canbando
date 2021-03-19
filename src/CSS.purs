@@ -30,11 +30,20 @@ bgSecondary = ClassName "bg-secondary"
 btn :: ClassName
 btn = ClassName "btn"
 
+btnClose :: ClassName
+btnClose = ClassName "btn-close"
+
 btnPrimary :: ClassName
 btnPrimary = ClassName "btn-primary"
 
 btnSecondary :: ClassName
 btnSecondary = ClassName "btn-secondary"
+
+btnSm :: ClassName
+btnSm = ClassName "btn-sm"
+
+justifyContentBetween :: ClassName
+justifyContentBetween = ClassName "justify-content-between"
 
 listCard :: ClassName
 listCard = ClassName "list-card"
@@ -81,8 +90,29 @@ flexRow = ClassName "flex-row"
 flexShrink0 :: ClassName
 flexShrink0 = ClassName "flex-shrink-0"
 
+formControl :: ClassName
+formControl = ClassName "form-control"
+
+formControlColor :: ClassName
+formControlColor = ClassName "form-control-color"
+
 formControlLG :: ClassName
 formControlLG = ClassName "form-control-lg"
+
+formCheck :: ClassName
+formCheck = ClassName "form-check"
+
+formCheckInput :: ClassName
+formCheckInput = ClassName "form-check-input"
+
+formCheckLabel :: ClassName
+formCheckLabel = ClassName "form-check-label"
+
+formLabel :: ClassName
+formLabel = ClassName "form-label"
+
+formText :: ClassName
+formText = ClassName "form-text"
 
 hidden :: ClassName
 hidden = ClassName "d-none"
@@ -95,6 +125,12 @@ listMenu = ClassName "list-menu"
 
 listWrapper :: ClassName
 listWrapper = ClassName "list-wrapper"
+
+meAuto :: ClassName
+meAuto = ClassName "me-auto"
+
+msAuto :: ClassName
+msAuto = ClassName "ms-auto"
 
 navbar :: ClassName
 navbar = ClassName "navbar"
@@ -110,6 +146,9 @@ navbarLight = ClassName "navbar-light"
 
 navLink :: ClassName
 navLink = ClassName "nav-link"
+
+linkSecondary :: ClassName
+linkSecondary = ClassName "link-secondary"
 
 navbarToggler :: ClassName
 navbarToggler = ClassName "navbar-toggler"
@@ -128,3 +167,36 @@ roundedCircle = ClassName "rounded-circle"
 
 textWhite :: ClassName
 textWhite = ClassName "text-white"
+
+modal :: ClassName
+modal = ClassName "modal"
+
+fade :: ClassName
+fade = ClassName "fade"
+
+modalDialog :: ClassName
+modalDialog = ClassName "modal-dialog"
+
+modalContent :: ClassName
+modalContent = ClassName "modal-content"
+
+modalHeader :: ClassName
+modalHeader = ClassName "modal-header"
+
+modalTitle :: ClassName
+modalTitle = ClassName "modal-title"
+
+modalBody :: ClassName
+modalBody = ClassName "modal-body"
+
+modalFooter :: ClassName
+modalFooter = ClassName "modal-footer"
+
+wAuto :: ClassName
+wAuto = ClassName "w-auto"
+
+w100 :: ClassName
+w100 = ClassName "w-100"
+
+mb3 :: ClassName
+mb3 = ClassName "mb-3"

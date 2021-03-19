@@ -8,6 +8,7 @@ import Canbando.Capability.Store (class Store)
 import Canbando.Component.Header (header)
 import Canbando.TestInit (initTestStore)
 import Canbando.Util (wrap)
+import Data.Maybe (Maybe(..))
 import Effect.Class (class MonadEffect)
 import Halogen (Component, ComponentHTML, HalogenM, defaultEval, mkComponent, mkEval)
 import Halogen as H
@@ -37,7 +38,7 @@ render ::
   forall cs m.
   State -> ComponentHTML Action cs m
 render state =
-  div_ [ header "Canbando!"
+  div_ [ header Nothing
        , wrap [ button [onClick (const DoReset)] [text "Reset test data"] ] ]
 
 handleAction ::

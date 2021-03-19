@@ -59,7 +59,7 @@ render ::
   forall m.
   Navigate m =>
   State -> ComponentHTML Action Slots m
-render state = div_ [header "Canbando!", contents]
+render state = div_ [header Nothing, contents]
   where contents =
           case state of
                NotAsked -> text "Not asked yet!"

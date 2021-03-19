@@ -8,6 +8,7 @@ import Canbando.Capability.Resource.List (class ManageList)
 import Canbando.Component.Header (header)
 import Canbando.Component.Icon (icon)
 import Canbando.Component.List (Direction(..), Output(..), Slot, component) as List
+import Canbando.Component.Modal.BoardDetails (Output, Slot, component) as BoardDetails
 import Canbando.Model.Board (Board, addListToBoard)
 import Canbando.Model.Id (Id)
 import Canbando.Model.List (List)
@@ -15,6 +16,7 @@ import Canbando.Util (wrap)
 import Data.Array (deleteAt, filter, findIndex, insertAt, length, (!!))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple.Nested ((/\))
+import Debug.Trace (traceM)
 import Effect.Class (class MonadEffect)
 import Halogen (Component, ComponentHTML, HalogenM, defaultEval, gets, lift, mkComponent, mkEval, modify_)
 import Halogen as H
@@ -34,13 +36,13 @@ data Action
   = Initialize
   | AddList
   | ListAction List.Output
+  | ModalAction BoardDetails.Output
 
 type Slot id = forall query. H.Slot query Void id
 
-type Slots = ( list :: List.Slot Id )
+type Slots = ( list :: List.Slot Id
+             , modal :: BoardDetails.Slot )
 
-_list :: Proxy "list"
-_list = Proxy
 
 component ::
   forall q o m.
@@ -64,7 +66,7 @@ render ::
   MonadEffect m =>
   ManageList m =>
   State -> ComponentHTML Action Slots m
-render state = div_ [header name, wrap contents]
+render state = div_ [modal, header (Just name), wrap contents]
   where name = case state.board of
           Success board -> board.name
           _ -> "Canbando!"
@@ -80,7 +82,8 @@ render state = div_ [header name, wrap contents]
                        onClick (const AddList)]
                [icon "bi-plus-circle", text "Add new list"]]
 
-        onelist lst = slot _list lst.id List.component lst ListAction
+        onelist lst = slot (Proxy :: _ "list") lst.id List.component lst ListAction
+        modal = slot (Proxy :: _ "modal") unit BoardDetails.component unit ModalAction
 
 handleAction ::
   forall cs o m.
@@ -107,6 +110,8 @@ handleAction = case _ of
   ListAction (List.ListMoved List.Left id) -> doMove id List.Left
 
   ListAction (List.ListMoved List.Right id) -> doMove id List.Right
+
+  ModalAction a -> traceM a
 
 deleteListFromBoard :: Id -> Board -> Board
 deleteListFromBoard listId brd = brd { lists = filter (\lst -> lst.id /= listId) brd.lists }
