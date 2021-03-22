@@ -43,9 +43,8 @@ loadBoards =
 
 instance manageBoardM :: (Monad m, IdSupply m, Store m) => ManageBoard m where
   addBoard = do
-    -- TODO: TEST!!!
     newId <- genId 'B'
-    let board = { id: newId, name: "New board", bgColour: "white", lists: [] }
+    let board = { id: newId, name: "New board", bgColour: "#CCCCCC", lists: [] }
     setItem board.id $ toBoardStore board
     root <- fromMaybe [] <$> getItem "root"
     setItem "root" $ root <> [board.id]
