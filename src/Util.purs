@@ -1,6 +1,6 @@
 module Canbando.Util
   ( blurTarget, focusElement
-  , wrap, wrapCol
+  , wrap, wrapWith, wrapCol
   , containerRow, containerCol
   , dataBsDismiss, dataBsToggle, dataBsTarget
   ) where
@@ -11,7 +11,7 @@ import Canbando.CSS as CSS
 import Effect (Effect)
 import Halogen (ComponentHTML)
 import Halogen.HTML (AttrName(..), div, main)
-import Halogen.HTML.Properties (IProp, attr, class_, classes)
+import Halogen.HTML.Properties (IProp, attr, class_, classes, style)
 import Web.Event.Event (Event)
 
 
@@ -22,6 +22,10 @@ foreign import focusElement :: String -> Effect Unit
 wrap :: forall act cs m. Array (ComponentHTML act cs m) -> ComponentHTML act cs m
 wrap content =
   main [class_ CSS.flexShrink0] [containerRow content]
+
+wrapWith :: forall act cs m. String -> Array (ComponentHTML act cs m) -> ComponentHTML act cs m
+wrapWith st content =
+  main [class_ CSS.flexShrink0, style st] [containerRow content]
 
 containerRow :: forall act cs m. Array (ComponentHTML act cs m) -> ComponentHTML act cs m
 containerRow content =

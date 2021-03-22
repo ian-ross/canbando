@@ -4,7 +4,7 @@
 
 module Canbando.Capability.Resource.Board (
   class ManageBoard,
-  addBoard,
+  addBoard, updateBoard,
   getBoards, getBoardStore, getBoard,
   deleteBoard, moveList, addList, deleteList,
   loadBoards
@@ -30,6 +30,7 @@ class Monad m <= ManageBoard m where
   getBoards :: m (Array Id)
   getBoardStore :: Id {- boardId -} -> m (Maybe BoardStore)
   getBoard :: Id {- boardId -} -> m (Maybe Board)
+  updateBoard :: Id {- boardId -} -> Board -> m Unit
   deleteBoard :: Id {- boardId -} -> m Unit
   moveList :: Id {- boardId -} -> Id {- listId -} -> Int {- index -} -> m Unit
   addList :: Id {- boardId -} -> m (Maybe List)
@@ -49,6 +50,8 @@ instance manageBoardM :: (Monad m, IdSupply m, Store m) => ManageBoard m where
     root <- fromMaybe [] <$> getItem "root"
     setItem "root" $ root <> [board.id]
     pure board
+
+  updateBoard id board = setItem id $ toBoardStore board
 
   getBoards = fromMaybe [] <$> getItem "root"
 

@@ -3,27 +3,28 @@ module Canbando.Page.Board where
 import Prelude hiding (div)
 
 import Canbando.CSS as CSS
-import Canbando.Capability.Resource.Board (class ManageBoard, addList, deleteList, getBoard, moveList)
+import Canbando.Capability.Resource.Board (class ManageBoard, addList, deleteList, getBoard, moveList, updateBoard)
 import Canbando.Capability.Resource.List (class ManageList)
 import Canbando.Component.Header (header)
 import Canbando.Component.Icon (icon)
 import Canbando.Component.List (Direction(..), Output(..), Slot, component) as List
-import Canbando.Component.Modal.BoardDetails (Output, Slot, component) as BoardDetails
+import Canbando.Component.Modal.BoardDetails (Output(..))
+import Canbando.Component.Modal.BoardDetails (Output, Slot, Query(..), component) as BoardDetails
 import Canbando.Model.Board (Board, addListToBoard)
 import Canbando.Model.Id (Id)
 import Canbando.Model.List (List)
-import Canbando.Util (wrap)
+import Canbando.Util (wrap, wrapWith)
 import Data.Array (deleteAt, filter, findIndex, insertAt, length, (!!))
+import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple.Nested ((/\))
-import Debug.Trace (traceM)
 import Effect.Class (class MonadEffect)
-import Halogen (Component, ComponentHTML, HalogenM, defaultEval, gets, lift, mkComponent, mkEval, modify_)
+import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, gets, lift, mkComponent, mkEval, modify_, tell)
 import Halogen as H
 import Halogen.HTML (button, div_, slot, text)
 import Halogen.HTML.Events (onClick)
 import Halogen.HTML.Properties (classes)
-import Network.RemoteData (RemoteData(..))
+import Network.RemoteData (RemoteData(..), toMaybe)
 import Type.Proxy (Proxy(..))
 
 
@@ -66,10 +67,8 @@ render ::
   MonadEffect m =>
   ManageList m =>
   State -> ComponentHTML Action Slots m
-render state = div_ [modal, header (Just name), wrap contents]
-  where name = case state.board of
-          Success board -> board.name
-          _ -> "Canbando!"
+render state = div_ [modal, header name, wrapper contents]
+  where name = _.name <$> toMaybe state.board
         contents =
           case state.board of
             NotAsked -> [text "Not asked yet!"]
@@ -82,20 +81,28 @@ render state = div_ [modal, header (Just name), wrap contents]
                        onClick (const AddList)]
                [icon "bi-plus-circle", text "Add new list"]]
 
+        wrapper =
+          case state.board of
+            Success board ->
+              wrapWith ("background-color: " <> board.bgColour <> ";")
+            _ -> wrap
+
         onelist lst = slot (Proxy :: _ "list") lst.id List.component lst ListAction
         modal = slot (Proxy :: _ "modal") unit BoardDetails.component unit ModalAction
 
 handleAction ::
-  forall cs o m.
+  forall o m.
   ManageBoard m =>
-  Action -> HalogenM State Action cs o m Unit
+  Action -> HalogenM State Action Slots o m Unit
 handleAction = case _ of
   Initialize -> do
     modify_ \s -> s { board = Loading }
     id <- gets _.id
     gets _.id >>= lift <<< getBoard >>= case _ of
       Nothing -> modify_ \s -> s { board = Failure "Couldn't load board!" }
-      Just board -> modify_ \s -> s { board = Success board }
+      Just board -> do
+        modify_ \s -> s { board = Success board }
+        tell (Proxy :: _ "modal") unit (BoardDetails.Show board)
 
   AddList -> do
     (lift <<< addList =<< gets _.id) >>= case _ of
@@ -111,7 +118,11 @@ handleAction = case _ of
 
   ListAction (List.ListMoved List.Right id) -> doMove id List.Right
 
-  ModalAction a -> traceM a
+  ModalAction (Updated bi) -> do
+    st <- get
+    let newb = st.board <#> \b -> b { name = bi.name, bgColour = bi.bgColour }
+    modify_ \s -> s { board = newb }
+    for_ newb \b -> lift $ updateBoard b.id b
 
 deleteListFromBoard :: Id -> Board -> Board
 deleteListFromBoard listId brd = brd { lists = filter (\lst -> lst.id /= listId) brd.lists }

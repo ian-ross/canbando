@@ -22,7 +22,7 @@ doInitTestStore :: forall m. IdSupply m => Store m => m Unit
 doInitTestStore = do
   id <- genId 'B'
   lists <- sequence [todo, inProgress, done]
-  setItem id { id, name: "Test board", lists: map _.id lists }
+  setItem id { id, name: "Test board", bgColour: "#CCCCCC", lists: map _.id lists }
   setItem "root" [id]
 
 initList ::

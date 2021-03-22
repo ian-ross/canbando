@@ -2,6 +2,14 @@ body {
   background-color: #ccc;
 }
 
+body > div {
+  height: 100%;
+}
+
+main {
+  height: 100%;
+}
+
 main > .container-fluid {
   padding: 72px 15px 0;
   overflow: auto;
