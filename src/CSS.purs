@@ -150,6 +150,12 @@ meAuto = ClassName "me-auto"
 msAuto :: ClassName
 msAuto = ClassName "ms-auto"
 
+ms2 :: ClassName
+ms2 = ClassName "ms-2"
+
+mt2 :: ClassName
+mt2 = ClassName "mt-2"
+
 navbar :: ClassName
 navbar = ClassName "navbar"
 

@@ -5,19 +5,20 @@ module Canbando.Component.Modal.BoardDetails
 import Prelude hiding (div)
 
 import Canbando.CSS as CSS
+import Canbando.Component.LabelDiv as LabelDiv
 import Canbando.Component.Modal (renderModal)
 import Canbando.Model.Board (Board, BoardInfo)
 import Canbando.Model.Id (Id)
 import Canbando.Util (dataBsDismiss)
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..))
-import Debug.Trace (traceM)
 import Effect.Class (class MonadEffect)
 import Halogen (Component, ComponentHTML, HalogenM, RefLabel(..), defaultEval, get, getHTMLElementRef, gets, liftEffect, mkComponent, mkEval, modify_, put, raise)
 import Halogen as H
-import Halogen.HTML (button, div, form_, h5, input, label, p, text)
+import Halogen.HTML (button, details, div, form_, input, label, p, slot, summary, text)
 import Halogen.HTML.Events (onClick, onKeyUp, onValueInput)
 import Halogen.HTML.Properties (ButtonType(..), InputType(..), class_, classes, for, id, ref, type_, value)
+import Type.Proxy (Proxy(..))
 import Web.HTML.HTMLInputElement (fromHTMLElement, setValue)
 import Web.UIEvent.KeyboardEvent (KeyboardEvent, key)
 
@@ -42,6 +43,7 @@ data Action = DoNothing
             | StartDelete
             | CancelDelete
             | ConfirmDelete
+            | LabelDivAction LabelDiv.Output
 
 data Query a = Show Board a
 
@@ -49,6 +51,12 @@ data Output = Updated BareBoardInfo
             | Deleted Id
 
 type Slot = H.Slot Query Output Unit
+
+type Slots = ( label :: LabelDiv.Slot )
+
+_label :: Proxy "label"
+_label = Proxy
+
 
 initialState :: State
 initialState =
@@ -80,7 +88,7 @@ catchEnter :: KeyboardEvent -> Action
 catchEnter ev =
   if key ev == "Enter" then SaveChanges else DoNothing
 
-render :: forall cs m. State -> ComponentHTML Action cs m
+render :: forall m. State -> ComponentHTML Action Slots m
 render s =
   renderModal
     "boardDetailsModal" "boardDetailsModalLabel" "Edit board details"
@@ -104,11 +112,19 @@ render s =
                 , ref (RefLabel boardBgColourId) , value s.bgColour]
         ]
       ]
+    , div [class_ CSS.mb3]
+      [ details [] $
+        [ summary [class_ CSS.formLabel] [text "Labels"] ]
+        <> map onelabel labs <>
+        [ button [ classes [CSS.btn, CSS.btnSecondary, CSS.btnSm]
+                 , onClick (const DoNothing) ]
+          [text "Create label..."]
+        ]
+      ]
     , div [ classes [CSS.card, CSS.textDanger, CSS.mb3] ]
       [ div [classes [CSS.cardHeader]] [text "DANGER!"]
       , div [class_ CSS.cardBody]
-        [ h5 [class_ CSS.cardTitle] [text "Delete board"]
-        , p [class_ CSS.cardText]
+        [ p [class_ CSS.cardText]
           [text "You can delete this board here. This action is irreversible!"]
         , div [classes [CSS.dFlex, CSS.justifyContentBetween]] $
           if s.deleting
@@ -131,13 +147,20 @@ render s =
              , dataBsDismiss "modal", onClick (const SaveChanges) ]
       [text "Save changes"]
     ]
+    where
+      onelabel lab = slot _label lab.id LabelDiv.component lab LabelDivAction
+      labs = [ { id: "X000001", label: "Label 1", colour: "#FF0000"}
+             , { id: "X000002", label: "Label 2", colour: "#00FF00"}
+             , { id: "X000003", label: "Label 3", colour: "#0000FF"} ]
 
 handleAction ::
-  forall cs m.
+  forall m.
   MonadEffect m =>
-  Action -> HalogenM State Action cs Output m Unit
+  Action -> HalogenM State Action Slots Output m Unit
 handleAction =
   case _ of
+    LabelDivAction _ -> pure unit
+
     DoNothing -> pure unit
 
     NameUpdate name -> modify_ _ { name = name }
@@ -153,7 +176,8 @@ handleAction =
         bgCol <- getHTMLElementRef (RefLabel boardBgColourId)
         for_ (bgCol >>= fromHTMLElement) \bgColourInput ->
           liftEffect $ setValue b.bgColour bgColourInput
-        modify_ _ { name = b.name, bgColour = b.bgColour }
+        modify_ _ { name = b.name, bgColour = b.bgColour
+                  , deleting = false }
 
     SaveChanges -> do
       st <- get
@@ -171,7 +195,7 @@ handleAction =
       for_ st.board \b -> raise $ Deleted b.id
 
 
-handleQuery :: forall m a. Query a -> HalogenM State Action () Output m (Maybe a)
+handleQuery :: forall m a. Query a -> HalogenM State Action Slots Output m (Maybe a)
 handleQuery (Show board a) = do
   modify_ \s -> s { board = Just $ toBareBoardInfo board
                   , name = board.name, bgColour = board.bgColour }
