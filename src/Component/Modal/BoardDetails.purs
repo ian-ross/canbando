@@ -26,7 +26,7 @@ import Web.UIEvent.KeyboardEvent (KeyboardEvent, key)
 type BareBoardInfo = { | BoardInfo () }
 
 toBareBoardInfo :: forall row. { | BoardInfo row } -> BareBoardInfo
-toBareBoardInfo { id, name, bgColour } = { id, name, bgColour }
+toBareBoardInfo { id, name, bgColour, labels } = { id, name, bgColour, labels }
 
 type State =
   { visible :: Boolean

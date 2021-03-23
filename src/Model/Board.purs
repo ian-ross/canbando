@@ -16,6 +16,7 @@ type BoardInfo row =
   ( id :: Id
   , name :: String
   , bgColour :: String
+  , labels :: Array { label :: String, colour :: String }
   | row )
 
 type BoardLists listrep row =
@@ -34,6 +35,7 @@ toBoard brd =
   { id: brd.id
   , name: brd.name
   , bgColour: brd.bgColour
+  , labels: brd.labels
   , lists: brd.lists }
 
 toBoardStore :: forall row. BoardRep List row -> BoardStore
@@ -41,6 +43,7 @@ toBoardStore brd =
   { id: brd.id
   , name: brd.name
   , bgColour: brd.bgColour
+  , labels: brd.labels
   ,lists: map _.id brd.lists }
 
 addListToBoard :: forall list row. list -> BoardRep list row -> BoardRep list row
