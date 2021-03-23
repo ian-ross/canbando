@@ -3,7 +3,8 @@ module Canbando.Page.Board where
 import Prelude hiding (div)
 
 import Canbando.CSS as CSS
-import Canbando.Capability.Resource.Board (class ManageBoard, addList, deleteList, getBoard, moveList, updateBoard)
+import Canbando.Capability.Navigate (class Navigate, navigate)
+import Canbando.Capability.Resource.Board (class ManageBoard, addList, deleteBoard, deleteList, getBoard, moveList, updateBoard)
 import Canbando.Capability.Resource.List (class ManageList)
 import Canbando.Component.Header (header)
 import Canbando.Component.Icon (icon)
@@ -13,6 +14,7 @@ import Canbando.Component.Modal.BoardDetails (Output, Slot, Query(..), component
 import Canbando.Model.Board (Board, addListToBoard)
 import Canbando.Model.Id (Id)
 import Canbando.Model.List (List)
+import Canbando.Routes (Route(..))
 import Canbando.Util (wrap, wrapWith)
 import Data.Array (deleteAt, filter, findIndex, insertAt, length, (!!))
 import Data.Foldable (for_)
@@ -50,6 +52,7 @@ component ::
   MonadEffect m =>
   ManageList m =>
   ManageBoard m =>
+  Navigate m =>
   Component q Id o m
 component =
   mkComponent
@@ -93,6 +96,7 @@ render state = div_ [modal, header name, wrapper contents]
 handleAction ::
   forall o m.
   ManageBoard m =>
+  Navigate m =>
   Action -> HalogenM State Action Slots o m Unit
 handleAction = case _ of
   Initialize -> do
@@ -123,6 +127,11 @@ handleAction = case _ of
     let newb = st.board <#> \b -> b { name = bi.name, bgColour = bi.bgColour }
     modify_ \s -> s { board = newb }
     for_ newb \b -> lift $ updateBoard b.id b
+
+  ModalAction (Deleted boardId) -> do
+    lift $ deleteBoard boardId
+    navigate Home
+
 
 deleteListFromBoard :: Id -> Board -> Board
 deleteListFromBoard listId brd = brd { lists = filter (\lst -> lst.id /= listId) brd.lists }

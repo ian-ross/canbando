@@ -27,6 +27,9 @@ bgLight = ClassName "bg-light"
 bgSecondary ::ClassName
 bgSecondary = ClassName "bg-secondary"
 
+bgDanger ::ClassName
+bgDanger = ClassName "bg-danger"
+
 btn :: ClassName
 btn = ClassName "btn"
 
@@ -39,6 +42,9 @@ btnPrimary = ClassName "btn-primary"
 btnSecondary :: ClassName
 btnSecondary = ClassName "btn-secondary"
 
+btnDanger :: ClassName
+btnDanger = ClassName "btn-danger"
+
 btnSm :: ClassName
 btnSm = ClassName "btn-sm"
 
@@ -50,6 +56,18 @@ listCard = ClassName "list-card"
 
 card :: ClassName
 card = ClassName "card"
+
+cardHeader :: ClassName
+cardHeader = ClassName "card-header"
+
+cardBody :: ClassName
+cardBody = ClassName "card-body"
+
+cardTitle :: ClassName
+cardTitle = ClassName "card-title"
+
+cardText :: ClassName
+cardText = ClassName "card-text"
 
 cardInner :: ClassName
 cardInner = ClassName "card-inner"
@@ -167,6 +185,9 @@ roundedCircle = ClassName "rounded-circle"
 
 textWhite :: ClassName
 textWhite = ClassName "text-white"
+
+textDanger :: ClassName
+textDanger = ClassName "text-danger"
 
 modal :: ClassName
 modal = ClassName "modal"

@@ -21,6 +21,7 @@ import Canbando.Model.List (List, ListStore, toListStore)
 import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Control.Monad.Trans.Class (lift)
 import Data.Array (delete, insertAt)
+import Data.Foldable (for_)
 import Data.Maybe (Maybe, fromMaybe, maybe)
 import Data.Traversable (sequence, traverse, traverse_)
 
@@ -66,8 +67,11 @@ instance manageBoardM :: (Monad m, IdSupply m, Store m) => ManageBoard m where
       lists <- MaybeT $ sequence <$> traverse getCards oklists
       pure { id: brd.id, name: brd.name, bgColour: brd.bgColour, lists: lists }
 
-  -- TODO: TEST!!!
-  deleteBoard boardId = removeItem boardId
+  deleteBoard boardId = do
+    mroot <- getItem "root"
+    for_ mroot \root -> do
+      setItem "root" $ delete boardId root
+      removeItem boardId
 
   moveList boardId listId idx = const unit <$> runMaybeT do
     board :: BoardStore <- MaybeT $ getItem boardId

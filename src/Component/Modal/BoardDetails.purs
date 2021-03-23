@@ -7,6 +7,7 @@ import Prelude hiding (div)
 import Canbando.CSS as CSS
 import Canbando.Component.Modal (renderModal)
 import Canbando.Model.Board (Board, BoardInfo)
+import Canbando.Model.Id (Id)
 import Canbando.Util (dataBsDismiss)
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..))
@@ -14,7 +15,7 @@ import Debug.Trace (traceM)
 import Effect.Class (class MonadEffect)
 import Halogen (Component, ComponentHTML, HalogenM, RefLabel(..), defaultEval, get, getHTMLElementRef, gets, liftEffect, mkComponent, mkEval, modify_, put, raise)
 import Halogen as H
-import Halogen.HTML (button, div, form_, input, label, text)
+import Halogen.HTML (button, div, form_, h5, input, label, p, text)
 import Halogen.HTML.Events (onClick, onKeyUp, onValueInput)
 import Halogen.HTML.Properties (ButtonType(..), InputType(..), class_, classes, for, id, ref, type_, value)
 import Web.HTML.HTMLInputElement (fromHTMLElement, setValue)
@@ -38,10 +39,14 @@ data Action = DoNothing
             | BgColourUpdate String
             | Dismiss
             | SaveChanges
+            | StartDelete
+            | CancelDelete
+            | ConfirmDelete
 
 data Query a = Show Board a
 
 data Output = Updated BareBoardInfo
+            | Deleted Id
 
 type Slot = H.Slot Query Output Unit
 
@@ -99,6 +104,25 @@ render s =
                 , ref (RefLabel boardBgColourId) , value s.bgColour]
         ]
       ]
+    , div [ classes [CSS.card, CSS.textDanger, CSS.mb3] ]
+      [ div [classes [CSS.cardHeader]] [text "DANGER!"]
+      , div [class_ CSS.cardBody]
+        [ h5 [class_ CSS.cardTitle] [text "Delete board"]
+        , p [class_ CSS.cardText]
+          [text "You can delete this board here. This action is irreversible!"]
+        , div [classes [CSS.dFlex, CSS.justifyContentBetween]] $
+          if s.deleting
+          then [ button [ classes [CSS.btn, CSS.btnSecondary]
+                        , onClick (const CancelDelete)]
+                 [text "Cancel"]
+               , button [ classes [CSS.btn, CSS.btnDanger, CSS.msAuto]
+                        , dataBsDismiss "modal", onClick (const ConfirmDelete)]
+                 [text "Confirm deletion"] ]
+          else [ button [ classes [CSS.btn, CSS.btnDanger]
+                        , onClick (const StartDelete) ]
+                 [text "Delete board..."] ]
+        ]
+      ]
     ]
     [ button [ type_ ButtonButton, classes [CSS.btn, CSS.btnSecondary]
              , dataBsDismiss "modal", onClick (const Dismiss) ]
@@ -116,9 +140,9 @@ handleAction =
   case _ of
     DoNothing -> pure unit
 
-    NameUpdate name -> modify_ \s -> s { name = name }
+    NameUpdate name -> modify_ _ { name = name }
 
-    BgColourUpdate bgColour -> modify_ \s -> s { bgColour = bgColour }
+    BgColourUpdate bgColour -> modify_ _ { bgColour = bgColour }
 
     Dismiss -> do
       mb <- gets _.board
@@ -129,15 +153,23 @@ handleAction =
         bgCol <- getHTMLElementRef (RefLabel boardBgColourId)
         for_ (bgCol >>= fromHTMLElement) \bgColourInput ->
           liftEffect $ setValue b.bgColour bgColourInput
-        modify_ \s -> s { name = b.name, bgColour = b.bgColour }
+        modify_ _ { name = b.name, bgColour = b.bgColour }
 
     SaveChanges -> do
-      traceM "SAVE CHANGES"
       st <- get
       for_ st.board \b -> do
         let newb = b { name = st.name, bgColour = st.bgColour }
         put $ st { board = Just newb }
         raise (Updated newb)
+
+    StartDelete -> modify_ _ { deleting = true }
+
+    CancelDelete -> modify_ _ { deleting = false }
+
+    ConfirmDelete -> do
+      st <- get
+      for_ st.board \b -> raise $ Deleted b.id
+
 
 handleQuery :: forall m a. Query a -> HalogenM State Action () Output m (Maybe a)
 handleQuery (Show board a) = do
