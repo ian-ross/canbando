@@ -45,6 +45,9 @@ btnSecondary = ClassName "btn-secondary"
 btnDanger :: ClassName
 btnDanger = ClassName "btn-danger"
 
+btnLink :: ClassName
+btnLink = ClassName "btn-link"
+
 btnSm :: ClassName
 btnSm = ClassName "btn-sm"
 

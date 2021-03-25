@@ -8,18 +8,18 @@ import Prelude hiding (div)
 import Canbando.CSS as CSS
 import Canbando.Model.Card (Card, CardRep, toCard)
 import Canbando.Model.Id (Id)
-import Canbando.Util (focusElement)
+import Canbando.Util (dataBsTarget, dataBsToggle, focusElement)
 import Data.Argonaut (decodeJson, encodeJson, parseJson, stringify)
 import Data.Either (hush)
 import Data.Maybe (Maybe(..))
 import Data.MediaType (MediaType(..))
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
-import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, mkComponent, mkEval, modify, modify_, raise)
+import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, gets, mkComponent, mkEval, modify, modify_, raise)
 import Halogen as H
-import Halogen.HTML (a, div, input, text)
+import Halogen.HTML (a, button, div, input, text)
 import Halogen.HTML.Events (onBlur, onClick, onDragEnd, onDragEnter, onDragLeave, onDragOver, onDragStart, onDrop, onKeyDown, onKeyUp, onValueChange)
-import Halogen.HTML.Properties (class_, classes, draggable, href, id, value)
+import Halogen.HTML.Properties (ButtonType(..), class_, classes, draggable, href, id, tabIndex, type_, value)
 import Web.Event.Event (preventDefault, stopPropagation)
 import Web.HTML.Event.DataTransfer (DropEffect(..), dropEffect, getData, setData)
 import Web.HTML.Event.DragEvent (DragEvent, dataTransfer, toEvent)
@@ -42,12 +42,13 @@ data Output
   | CardDeletedByMove Id
   | CardMoved Card Id
   | CardUpdated Id Card
+  | OpenCardModal Card
 
 data Action = StartEditing | Edited String | Accept | Reject
             | DeleteCard MouseEvent
             | DragStart DragEvent | DragEnd DragEvent | Drop DragEvent
             | DragIndicate Boolean DragEvent
-            | DoNothing
+            | ModalOpenClicked | DoNothing
 
 type Slot id = forall query. H.Slot query Output id
 
@@ -74,8 +75,9 @@ component =
 
 initialState :: Card -> State
 initialState inp =
-  { id: inp.id, title: inp.title, edit: ""
-  , editing: false, dragging: false, dragIndicate: false }
+  { id: inp.id, title: inp.title, labels: inp.labels
+  , edit: "", editing: false
+  , dragging: false, dragIndicate: false }
 
 
 render :: forall m. State -> ComponentHTML Action () m
@@ -105,9 +107,15 @@ render s =
           , onBlur $ const (if s.editing then Accept else DoNothing)
           , value s.edit ]
   , div [ classes divClasses ] [text s.title]
-  , a [ class_ CSS.cardMenu
-      , href "#"
-      , onClick DeleteCard ] [text "..."]
+  , button [ type_ ButtonButton, tabIndex (-1)
+           , classes [CSS.cardMenu, CSS.btnLink, CSS.btnSm]
+           , dataBsToggle "modal", dataBsTarget "#cardDetailsModal"
+           , onClick (const ModalOpenClicked)]
+    [text "..."]
+  -- , modalButton "cardDetailsModal" "..."
+  -- , a [ class_ CSS.cardMenu
+  --     , href "#"
+  --     , onClick DeleteCard ] [text "..."]
   ]
   where inputClasses = if s.editing then [] else [CSS.hidden]
         divClasses = [CSS.cardInner] <> if s.editing then [CSS.hidden] else []
@@ -124,6 +132,8 @@ handleAction action = do
   s <- get
   case action of
     DoNothing -> pure unit
+
+    ModalOpenClicked -> raise $ OpenCardModal $ toCard s
 
     StartEditing ->
       when (not s.editing) do

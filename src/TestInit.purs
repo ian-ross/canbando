@@ -7,6 +7,7 @@ import Canbando.Capability.Store (class Store, clearStore, setItem)
 import Canbando.Model.Card (Card)
 import Canbando.Model.Id (Id)
 import Canbando.Model.List (List)
+import Data.Set (empty)
 import Data.Traversable (sequence, traverse)
 import Halogen (HalogenM, lift)
 
@@ -42,7 +43,7 @@ initCard ::
 initCard list title = do
   id <- genId 'C'
   setItem id { id, title, list }
-  pure { id, title }
+  pure { id, title, labels: empty }
 
 todo :: forall m. IdSupply m => Store m => m List
 todo = initList "To Do" ["Task #3", "Task #4", "Task #5", "Task #6", "Task #7"]

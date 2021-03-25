@@ -1,5 +1,5 @@
 module Canbando.Component.List (
-  Output(..), Direction(..), Slot,
+  Output(..), Direction(..), Query(..), Slot,
   component
 ) where
 
@@ -38,6 +38,7 @@ type State = { | ListRep Card StateInfo }
 data Output
   = ListDeleted Id
   | ListMoved Direction Id
+  | OpenCardModal Card Id
 
 data Direction = Left | Right
 
@@ -50,7 +51,9 @@ data Action
   | Delete
   | Move Direction
 
-type Slot id = forall query. H.Slot query Output id
+data Query a = DeleteCard Id a
+
+type Slot id = H.Slot Query Output id
 
 type Slots = ( card :: Card.Slot Id )
 
@@ -59,14 +62,15 @@ _card = Proxy
 
 
 component ::
-  forall query m.
+  forall m.
   MonadEffect m =>
   ManageList m =>
-  Component query List Output m
+  Component Query List Output m
 component = mkComponent
        { initialState
        , render
-       , eval : mkEval $ defaultEval { handleAction = handleAction }
+       , eval : mkEval $ defaultEval { handleAction = handleAction
+                                     , handleQuery = handleQuery }
        }
 
 
@@ -143,6 +147,9 @@ handleAction action =
               modify_ \s -> s { cards = insertCard 0 from s.cards }
             Just _ -> modify_ \s -> s { lastMoveLocal = true }
 
+    CardAction (Card.OpenCardModal card) ->
+      raise =<< (OpenCardModal card) <$> gets _.id
+
     CardAction (Card.CardUpdated cardId card) ->
       lift $ updateCard cardId card
 
@@ -182,3 +189,14 @@ insertCard idx card cards = fromMaybe cards $ insertAt idx card cards
 
 findCard :: Id -> Array Card -> Maybe Int
 findCard id cards = findIndex (\c -> c.id == id) cards
+
+
+handleQuery ::
+  forall m a.
+  MonadEffect m =>
+  ManageList m =>
+  Query a -> HalogenM State Action Slots Output m (Maybe a)
+handleQuery (DeleteCard cardId a) = do
+  lift $ deleteCard cardId
+  modify_ \s -> s { cards = filter (\c -> c.id /= cardId) s.cards }
+  pure $ Just a

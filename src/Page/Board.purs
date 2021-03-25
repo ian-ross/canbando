@@ -8,8 +8,9 @@ import Canbando.Capability.Resource.Board (class ManageBoard, addList, deleteBoa
 import Canbando.Capability.Resource.List (class ManageList)
 import Canbando.Component.Header (header)
 import Canbando.Component.Icon (icon)
-import Canbando.Component.List (Direction(..), Output(..), Slot, component) as List
+import Canbando.Component.List (Direction(..), Output(..), Slot, Query(..), component) as List
 import Canbando.Component.BoardModal (Output(..), Slot, Query(..), component) as BoardModal
+import Canbando.Component.CardModal (Output(..), Slot, Query(..), component) as CardModal
 import Canbando.Model.Board (Board, addListToBoard)
 import Canbando.Model.Id (Id)
 import Canbando.Model.List (List)
@@ -38,12 +39,14 @@ data Action
   = Initialize
   | AddList
   | ListAction List.Output
-  | ModalAction BoardModal.Output
+  | BoardModalAction BoardModal.Output
+  | CardModalAction CardModal.Output
 
 type Slot id = forall query. H.Slot query Void id
 
 type Slots = ( list :: List.Slot Id
-             , modal :: BoardModal.Slot )
+             , boardModal :: BoardModal.Slot
+             , cardModal :: CardModal.Slot )
 
 
 component ::
@@ -69,7 +72,7 @@ render ::
   MonadEffect m =>
   ManageList m =>
   State -> ComponentHTML Action Slots m
-render state = div_ [modal, header name, wrapper contents]
+render state = div_ [boardModal, cardModal, header name, wrapper contents]
   where name = _.name <$> toMaybe state.board
         contents =
           case state.board of
@@ -90,7 +93,8 @@ render state = div_ [modal, header name, wrapper contents]
             _ -> wrap
 
         onelist lst = slot (Proxy :: _ "list") lst.id List.component lst ListAction
-        modal = slot (Proxy :: _ "modal") unit BoardModal.component unit ModalAction
+        boardModal = slot (Proxy :: _ "boardModal") unit BoardModal.component unit BoardModalAction
+        cardModal = slot (Proxy :: _ "cardModal") unit CardModal.component unit CardModalAction
 
 handleAction ::
   forall o m.
@@ -105,12 +109,15 @@ handleAction = case _ of
       Nothing -> modify_ \s -> s { board = Failure "Couldn't load board!" }
       Just board -> do
         modify_ \s -> s { board = Success board }
-        tell (Proxy :: _ "modal") unit (BoardModal.Show board)
+        tell (Proxy :: _ "boardModal") unit (BoardModal.Show board)
 
   AddList -> do
     (lift <<< addList =<< gets _.id) >>= case _ of
       Nothing -> pure unit
       Just list -> modify_ \s -> s { board = addListToBoard list <$> s.board }
+
+  ListAction (List.OpenCardModal card listId) ->
+    tell (Proxy :: _ "cardModal") unit (CardModal.Show card listId)
 
   ListAction (List.ListDeleted listId) -> do
     boardId <- gets _.id
@@ -121,16 +128,21 @@ handleAction = case _ of
 
   ListAction (List.ListMoved List.Right id) -> doMove id List.Right
 
-  ModalAction (BoardModal.Updated bi) -> do
+  BoardModalAction (BoardModal.Updated bi) -> do
     st <- get
     let newb = st.board <#>
                _ { name = bi.name, bgColour = bi.bgColour, labels = bi.labels }
     modify_ \s -> s { board = newb }
     for_ newb \b -> lift $ updateBoard b.id b
 
-  ModalAction (BoardModal.Deleted boardId) -> do
+  BoardModalAction (BoardModal.Deleted boardId) -> do
     lift $ deleteBoard boardId
     navigate Home
+
+  CardModalAction (CardModal.Deleted { cardId, listId }) ->
+    tell (Proxy :: _ "list") listId (List.DeleteCard cardId)
+
+  CardModalAction (CardModal.Updated { cardId, labels }) -> pure unit
 
 
 deleteListFromBoard :: Id -> Board -> Board

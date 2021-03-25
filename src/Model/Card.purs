@@ -6,11 +6,13 @@ module Canbando.Model.Card
 import Canbando.Model.Id (Id)
 import Data.Argonaut (Json, JsonDecodeError, decodeJson, encodeJson)
 import Data.Either (Either)
+import Data.Set (Set)
 
 
 type CardRep row =
   ( id :: Id
   , title :: String
+  , labels :: Set String
   | row )
 
 type Card = { | CardRep () }
@@ -24,7 +26,7 @@ decode :: Json -> Either JsonDecodeError Card
 decode = decodeJson
 
 toCard :: forall row. { | CardRep row } -> Card
-toCard card = { id: card.id, title: card.title }
+toCard card = { id: card.id, title: card.title, labels: card.labels }
 
 toCardStore :: Card -> Id -> CardStore
-toCardStore { id, title } list = { id, title, list }
+toCardStore { id, title, labels } list = { id, title, labels, list }

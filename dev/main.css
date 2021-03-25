@@ -99,6 +99,8 @@ main > .container-fluid {
   position: absolute;
   right: 8px;
   top: 0px;
+  border: 0px;
+  background-color: transparent;
   font-weight: bold;
   text-decoration: none;
   color: #555;
