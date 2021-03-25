@@ -1,4 +1,4 @@
-module Canbando.Component.Modal.BoardDetails.Label
+module Canbando.Component.LabelEdit
   ( Input(..), Action(..), Output(..), Slot, component
   ) where
 

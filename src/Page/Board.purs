@@ -9,8 +9,7 @@ import Canbando.Capability.Resource.List (class ManageList)
 import Canbando.Component.Header (header)
 import Canbando.Component.Icon (icon)
 import Canbando.Component.List (Direction(..), Output(..), Slot, component) as List
-import Canbando.Component.Modal.BoardDetails (Output(..))
-import Canbando.Component.Modal.BoardDetails (Output, Slot, Query(..), component) as BoardDetails
+import Canbando.Component.BoardModal (Output(..), Slot, Query(..), component) as BoardModal
 import Canbando.Model.Board (Board, addListToBoard)
 import Canbando.Model.Id (Id)
 import Canbando.Model.List (List)
@@ -39,12 +38,12 @@ data Action
   = Initialize
   | AddList
   | ListAction List.Output
-  | ModalAction BoardDetails.Output
+  | ModalAction BoardModal.Output
 
 type Slot id = forall query. H.Slot query Void id
 
 type Slots = ( list :: List.Slot Id
-             , modal :: BoardDetails.Slot )
+             , modal :: BoardModal.Slot )
 
 
 component ::
@@ -91,7 +90,7 @@ render state = div_ [modal, header name, wrapper contents]
             _ -> wrap
 
         onelist lst = slot (Proxy :: _ "list") lst.id List.component lst ListAction
-        modal = slot (Proxy :: _ "modal") unit BoardDetails.component unit ModalAction
+        modal = slot (Proxy :: _ "modal") unit BoardModal.component unit ModalAction
 
 handleAction ::
   forall o m.
@@ -106,7 +105,7 @@ handleAction = case _ of
       Nothing -> modify_ \s -> s { board = Failure "Couldn't load board!" }
       Just board -> do
         modify_ \s -> s { board = Success board }
-        tell (Proxy :: _ "modal") unit (BoardDetails.Show board)
+        tell (Proxy :: _ "modal") unit (BoardModal.Show board)
 
   AddList -> do
     (lift <<< addList =<< gets _.id) >>= case _ of
@@ -122,14 +121,14 @@ handleAction = case _ of
 
   ListAction (List.ListMoved List.Right id) -> doMove id List.Right
 
-  ModalAction (Updated bi) -> do
+  ModalAction (BoardModal.Updated bi) -> do
     st <- get
     let newb = st.board <#>
                _ { name = bi.name, bgColour = bi.bgColour, labels = bi.labels }
     modify_ \s -> s { board = newb }
     for_ newb \b -> lift $ updateBoard b.id b
 
-  ModalAction (Deleted boardId) -> do
+  ModalAction (BoardModal.Deleted boardId) -> do
     lift $ deleteBoard boardId
     navigate Home
 

@@ -1,4 +1,4 @@
-module Canbando.Component.Modal.BoardDetails
+module Canbando.Component.BoardModal
   ( BareBoardInfo, Output(..), Slot, Query(..), component
   ) where
 
@@ -6,12 +6,11 @@ import Prelude hiding (div)
 
 import Canbando.CSS as CSS
 import Canbando.Component.Modal (renderModal)
-import Canbando.Component.Modal.BoardDetails.Label as Label
+import Canbando.Component.LabelEdit as Label
 import Canbando.Model.Board (Board, BoardInfo)
 import Canbando.Model.Id (Id)
 import Canbando.Util (dataBsDismiss)
 import Data.Array (filter, mapWithIndex, snoc)
-import Data.Bifunctor (class Bifunctor, bimap)
 import Data.Foldable (for_, maximum)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Effect.Class (class MonadEffect)
