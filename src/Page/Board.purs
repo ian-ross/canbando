@@ -124,7 +124,8 @@ handleAction = case _ of
 
   ModalAction (Updated bi) -> do
     st <- get
-    let newb = st.board <#> \b -> b { name = bi.name, bgColour = bi.bgColour }
+    let newb = st.board <#>
+               _ { name = bi.name, bgColour = bi.bgColour, labels = bi.labels }
     modify_ \s -> s { board = newb }
     for_ newb \b -> lift $ updateBoard b.id b
 

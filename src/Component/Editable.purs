@@ -11,7 +11,6 @@ import Halogen (ClassName, HalogenM, get, liftEffect, modify_)
 import Halogen.HTML (HTML, Node, div, div_, input, text)
 import Halogen.HTML.Events (onBlur, onClick, onKeyDown, onKeyUp, onValueChange)
 import Halogen.HTML.Properties (classes, id, tabIndex, value)
-import Web.Event.Event (Event)
 import Web.UIEvent.KeyboardEvent (KeyboardEvent, key)
 
 
@@ -39,9 +38,9 @@ editable ::
 editable f c = editableWith [] div f c
 
 editableWith ::
-  forall props act r.
+  forall props act r extra.
   Array ClassName ->
-  (forall i w. Node (Interactive (onScroll :: Event)) w i) ->
+  (forall i w. Node (Interactive extra) w i) ->
   (Maybe EditAction -> act) ->
   State r -> HTML props act
 editableWith extraInputClasses headElem f c =

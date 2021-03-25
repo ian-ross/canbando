@@ -5,13 +5,15 @@ module Canbando.Component.Modal.BoardDetails
 import Prelude hiding (div)
 
 import Canbando.CSS as CSS
-import Canbando.Component.LabelDiv as LabelDiv
 import Canbando.Component.Modal (renderModal)
+import Canbando.Component.Modal.BoardDetails.Label as Label
 import Canbando.Model.Board (Board, BoardInfo)
 import Canbando.Model.Id (Id)
 import Canbando.Util (dataBsDismiss)
-import Data.Foldable (for_)
-import Data.Maybe (Maybe(..))
+import Data.Array (filter, mapWithIndex, snoc)
+import Data.Bifunctor (class Bifunctor, bimap)
+import Data.Foldable (for_, maximum)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Effect.Class (class MonadEffect)
 import Halogen (Component, ComponentHTML, HalogenM, RefLabel(..), defaultEval, get, getHTMLElementRef, gets, liftEffect, mkComponent, mkEval, modify_, put, raise)
 import Halogen as H
@@ -33,7 +35,8 @@ type State =
   , board :: Maybe BareBoardInfo
   , name :: String
   , bgColour :: String
-  , deleting :: Boolean }
+  , deleting :: Boolean
+  , labels :: Array Label.Input }
 
 data Action = DoNothing
             | NameUpdate String
@@ -43,19 +46,20 @@ data Action = DoNothing
             | StartDelete
             | CancelDelete
             | ConfirmDelete
-            | LabelDivAction LabelDiv.Output
+            | AddLabel
+            | LabelAction Int Label.Output
 
 data Query a = Show Board a
 
 data Output = Updated BareBoardInfo
             | Deleted Id
 
-type Slot = H.Slot Query Output Unit
-
-type Slots = ( label :: LabelDiv.Slot )
+type Slots = ( label :: Label.Slot Int )
 
 _label :: Proxy "label"
 _label = Proxy
+
+type Slot = H.Slot Query Output Unit
 
 
 initialState :: State
@@ -64,7 +68,9 @@ initialState =
   , board: Nothing
   , name: ""
   , bgColour: "#CCCCCC"
-  , deleting: false }
+  , deleting: false
+  , labels: []
+  }
 
 component ::
   forall m.
@@ -88,8 +94,11 @@ catchEnter :: KeyboardEvent -> Action
 catchEnter ev =
   if key ev == "Enter" then SaveChanges else DoNothing
 
-render :: forall m. State -> ComponentHTML Action Slots m
-render s =
+render ::
+  forall m.
+  MonadEffect m =>
+  State -> ComponentHTML Action Slots m
+render model =
   renderModal
     "boardDetailsModal" "boardDetailsModalLabel" "Edit board details"
     Dismiss
@@ -101,7 +110,7 @@ render s =
                 -- TODO: THIS ISN'T WORKING
                 , onKeyUp catchEnter
                 , onValueInput NameUpdate
-                , ref (RefLabel boardNameId), value s.name]
+                , ref (RefLabel boardNameId), value model.name]
         ]
       , div [class_ CSS.mb3]
         [ label [for boardBgColourId, class_ CSS.formLabel]
@@ -109,15 +118,15 @@ render s =
         , input [ type_ InputColor, id boardBgColourId
                 , classes [CSS.formControl, CSS.formControlColor]
                 , onValueInput BgColourUpdate
-                , ref (RefLabel boardBgColourId) , value s.bgColour]
+                , ref (RefLabel boardBgColourId) , value model.bgColour]
         ]
       ]
     , div [class_ CSS.mb3]
       [ details [] $
         [ summary [class_ CSS.formLabel] [text "Labels"] ]
-        <> map onelabel labs <>
+        <> map onelabel model.labels <>
         [ button [ classes [CSS.btn, CSS.btnSecondary, CSS.btnSm]
-                 , onClick (const DoNothing) ]
+                 , onClick (const AddLabel) ]
           [text "Create label..."]
         ]
       ]
@@ -127,7 +136,7 @@ render s =
         [ p [class_ CSS.cardText]
           [text "You can delete this board here. This action is irreversible!"]
         , div [classes [CSS.dFlex, CSS.justifyContentBetween]] $
-          if s.deleting
+          if model.deleting
           then [ button [ classes [CSS.btn, CSS.btnSecondary]
                         , onClick (const CancelDelete)]
                  [text "Cancel"]
@@ -148,55 +157,73 @@ render s =
       [text "Save changes"]
     ]
     where
-      onelabel lab = slot _label lab.id LabelDiv.component lab LabelDivAction
-      labs = [ { id: "X000001", label: "Label 1", colour: "#FF0000"}
-             , { id: "X000002", label: "Label 2", colour: "#00FF00"}
-             , { id: "X000003", label: "Label 3", colour: "#0000FF"} ]
+      onelabel dat  = slot _label dat.id Label.component dat (LabelAction dat.id)
 
 handleAction ::
   forall m.
   MonadEffect m =>
   Action -> HalogenM State Action Slots Output m Unit
-handleAction =
-  case _ of
-    LabelDivAction _ -> pure unit
+handleAction = case _ of
+  LabelAction id action ->
+    case action of
+      Label.Deleted -> do
+        labs <- filter (\l -> l.id /= id) <$> gets _.labels
+        modify_ _ { labels = labs }
 
-    DoNothing -> pure unit
+      Label.Updated dat -> do
+        labs <- gets _.labels
+        let newlabs = map (\l -> if l.id /= id then l
+                                 else l { name = dat.name, colour = dat.colour}) labs
+        modify_ _ { labels = newlabs }
 
-    NameUpdate name -> modify_ _ { name = name }
+  AddLabel -> do
+    labs <- gets _.labels
+    let newId = 1 + (fromMaybe 0 $ maximum $ map _.id labs)
+        newLabel = { id: newId, name: "New label", colour: "#FFFFFF"}
+    modify_ _ { labels = labs `snoc` newLabel }
 
-    BgColourUpdate bgColour -> modify_ _ { bgColour = bgColour }
+  DoNothing -> pure unit
 
-    Dismiss -> do
-      mb <- gets _.board
-      for_ mb \b -> do
-        nm <- getHTMLElementRef (RefLabel boardNameId)
-        for_ (nm >>= fromHTMLElement) \nameInput ->
-          liftEffect $ setValue b.name nameInput
-        bgCol <- getHTMLElementRef (RefLabel boardBgColourId)
-        for_ (bgCol >>= fromHTMLElement) \bgColourInput ->
-          liftEffect $ setValue b.bgColour bgColourInput
-        modify_ _ { name = b.name, bgColour = b.bgColour
-                  , deleting = false }
+  NameUpdate name -> modify_ _ { name = name }
 
-    SaveChanges -> do
-      st <- get
-      for_ st.board \b -> do
-        let newb = b { name = st.name, bgColour = st.bgColour }
-        put $ st { board = Just newb }
-        raise (Updated newb)
+  BgColourUpdate bgColour -> modify_ _ { bgColour = bgColour }
 
-    StartDelete -> modify_ _ { deleting = true }
+  Dismiss -> do
+    mb <- gets _.board
+    for_ mb \b -> do
+      nm <- getHTMLElementRef (RefLabel boardNameId)
+      for_ (nm >>= fromHTMLElement) \nameInput ->
+        liftEffect $ setValue b.name nameInput
+      bgCol <- getHTMLElementRef (RefLabel boardBgColourId)
+      for_ (bgCol >>= fromHTMLElement) \bgColourInput ->
+        liftEffect $ setValue b.bgColour bgColourInput
+      modify_ _ { name = b.name, bgColour = b.bgColour
+                , deleting = false }
 
-    CancelDelete -> modify_ _ { deleting = false }
+  SaveChanges -> do
+    st <- get
+    for_ st.board \b -> do
+      let mklab { id, name, colour } = { label: name, colour }
+          newb = b { name = st.name, bgColour = st.bgColour
+                   , labels = map mklab st.labels }
+      put $ st { board = Just newb }
+      raise (Updated newb)
 
-    ConfirmDelete -> do
-      st <- get
-      for_ st.board \b -> raise $ Deleted b.id
+  StartDelete -> modify_ _ { deleting = true }
+
+  CancelDelete -> modify_ _ { deleting = false }
+
+  ConfirmDelete -> do
+    st <- get
+    for_ st.board \b -> raise $ Deleted b.id
 
 
-handleQuery :: forall m a. Query a -> HalogenM State Action Slots Output m (Maybe a)
+handleQuery ::
+  forall m a.
+  Query a -> HalogenM State Action Slots Output m (Maybe a)
 handleQuery (Show board a) = do
+  let mklab id lab = { id, name: lab.label, colour: lab.colour }
   modify_ \s -> s { board = Just $ toBareBoardInfo board
-                  , name = board.name, bgColour = board.bgColour }
+                  , name = board.name, bgColour = board.bgColour
+                  , labels = mapWithIndex mklab board.labels }
   pure $ Just a

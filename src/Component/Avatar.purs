@@ -7,7 +7,7 @@ import Halogen.HTML.Properties (classes)
 import Canbando.CSS as CSS
 
 
-avatar :: forall action slots m. String -> ComponentHTML action slots m
+avatar :: forall action cs m. String -> ComponentHTML action cs m
 avatar initials =
   div
   [classes [CSS.roundedCircle, CSS.avatar, CSS.bgSecondary, CSS.textWhite]]

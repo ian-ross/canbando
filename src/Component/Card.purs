@@ -78,7 +78,7 @@ initialState inp =
   , editing: false, dragging: false, dragIndicate: false }
 
 
-render :: forall cs m. State -> ComponentHTML Action cs m
+render :: forall m. State -> ComponentHTML Action () m
 render s =
   div [ id s.id
       , classes $

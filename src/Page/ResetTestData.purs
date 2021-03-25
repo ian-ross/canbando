@@ -34,9 +34,7 @@ component =
     , eval: mkEval $ defaultEval { handleAction = handleAction }
     }
 
-render ::
-  forall cs m.
-  State -> ComponentHTML Action cs m
+render :: forall m. State -> ComponentHTML Action () m
 render state =
   div_ [ header Nothing
        , wrap [ button [onClick (const DoReset)] [text "Reset test data"] ] ]

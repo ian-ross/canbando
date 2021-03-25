@@ -36,7 +36,7 @@ component =
   , eval : mkEval $ defaultEval { handleAction = handleAction }
   }
 
-render :: forall cs m. State -> ComponentHTML Action cs m
+render :: forall m. State -> ComponentHTML Action () m
 render s =
   div [ classes [CSS.boardTile, CSS.card]
       , onClick (const Clicked) ]

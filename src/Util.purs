@@ -1,5 +1,5 @@
 module Canbando.Util
-  ( blurTarget, focusElement
+  ( blurTarget, focusElement, blurElement
   , wrap, wrapWith, wrapCol
   , containerRow, containerCol
   , dataBsDismiss, dataBsToggle, dataBsTarget
@@ -17,6 +17,7 @@ import Web.Event.Event (Event)
 
 foreign import blurTarget :: Event -> Effect Unit
 foreign import focusElement :: String -> Effect Unit
+foreign import blurElement :: String -> Effect Unit
 
 
 wrap :: forall act cs m. Array (ComponentHTML act cs m) -> ComponentHTML act cs m

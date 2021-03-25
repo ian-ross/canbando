@@ -10,3 +10,9 @@ exports.focusElement = function(elemId) {
     document.getElementById(elemId).focus();
   };
 };
+
+exports.blurElement = function(elemId) {
+  return function() {
+    document.getElementById(elemId).blur();
+  };
+};
