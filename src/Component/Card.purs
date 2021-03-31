@@ -14,12 +14,12 @@ import Data.Either (hush)
 import Data.Maybe (Maybe(..))
 import Data.MediaType (MediaType(..))
 import Effect (Effect)
-import Effect.Class (class MonadEffect, liftEffect)
-import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, gets, mkComponent, mkEval, modify, modify_, raise)
+import Effect.Aff.Class (class MonadAff)
+import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, liftEffect, mkComponent, mkEval, modify, modify_, raise)
 import Halogen as H
-import Halogen.HTML (a, button, div, input, text)
+import Halogen.HTML (button, div, input, text)
 import Halogen.HTML.Events (onBlur, onClick, onDragEnd, onDragEnter, onDragLeave, onDragOver, onDragStart, onDrop, onKeyDown, onKeyUp, onValueChange)
-import Halogen.HTML.Properties (ButtonType(..), class_, classes, draggable, href, id, tabIndex, type_, value)
+import Halogen.HTML.Properties (ButtonType(..), classes, draggable, id, tabIndex, type_, value)
 import Web.Event.Event (preventDefault, stopPropagation)
 import Web.HTML.Event.DataTransfer (DropEffect(..), dropEffect, getData, setData)
 import Web.HTML.Event.DragEvent (DragEvent, dataTransfer, toEvent)
@@ -63,8 +63,7 @@ catchEscape ev =
 
 component ::
   forall query m.
-  MonadEffect m =>
-  Component query Card Output m
+  MonadAff m => Component query Card Output m
 component =
   mkComponent
   { initialState: initialState
@@ -124,10 +123,7 @@ render s =
 mtype :: MediaType
 mtype = MediaType "application/json"
 
-handleAction ::
-  forall m.
-  MonadEffect m =>
-  Action -> HalogenM State Action () Output m Unit
+handleAction :: forall m. MonadAff m => Action -> HalogenM State Action () Output m Unit
 handleAction action = do
   s <- get
   case action of

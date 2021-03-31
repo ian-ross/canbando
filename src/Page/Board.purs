@@ -6,11 +6,11 @@ import Canbando.CSS as CSS
 import Canbando.Capability.Navigate (class Navigate, navigate)
 import Canbando.Capability.Resource.Board (class ManageBoard, addList, deleteBoard, deleteList, getBoard, moveList, updateBoard)
 import Canbando.Capability.Resource.List (class ManageList)
+import Canbando.Component.BoardModal (Output(..), Slot, Query(..), component) as BoardModal
+import Canbando.Component.CardModal (Output(..), Slot, Query(..), component) as CardModal
 import Canbando.Component.Header (header)
 import Canbando.Component.Icon (icon)
 import Canbando.Component.List (Direction(..), Output(..), Slot, Query(..), component) as List
-import Canbando.Component.BoardModal (Output(..), Slot, Query(..), component) as BoardModal
-import Canbando.Component.CardModal (Output(..), Slot, Query(..), component) as CardModal
 import Canbando.Model.Board (Board, addListToBoard)
 import Canbando.Model.Id (Id)
 import Canbando.Model.List (List)
@@ -20,7 +20,7 @@ import Data.Array (deleteAt, filter, findIndex, insertAt, length, (!!))
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple.Nested ((/\))
-import Effect.Class (class MonadEffect)
+import Effect.Aff.Class (class MonadAff)
 import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, gets, lift, mkComponent, mkEval, modify_, tell)
 import Halogen as H
 import Halogen.HTML (button, div_, slot, text)
@@ -51,7 +51,7 @@ type Slots = ( list :: List.Slot Id
 
 component ::
   forall q o m.
-  MonadEffect m =>
+  MonadAff m =>
   ManageList m =>
   ManageBoard m =>
   Navigate m =>
@@ -69,7 +69,7 @@ initialState id = { id, board: NotAsked }
 
 render ::
   forall m.
-  MonadEffect m =>
+  MonadAff m =>
   ManageList m =>
   State -> ComponentHTML Action Slots m
 render state = div_ [boardModal, cardModal, header name, wrapper contents]

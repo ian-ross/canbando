@@ -6,7 +6,7 @@ import Canbando.CSS as CSS
 import Canbando.Util (focusElement)
 import DOM.HTML.Indexed (Interactive)
 import Data.Maybe (Maybe(..))
-import Effect.Class (class MonadEffect)
+import Effect.Aff.Class (class MonadAff)
 import Halogen (ClassName, HalogenM, get, liftEffect, modify_)
 import Halogen.HTML (HTML, Node, div, div_, input, text)
 import Halogen.HTML.Events (onBlur, onClick, onKeyDown, onKeyUp, onValueChange)
@@ -64,7 +64,7 @@ editableWith extraInputClasses headElem f c =
 
 handleAction ::
   forall m r act cs output.
-  MonadEffect m =>
+  MonadAff m =>
   EditAction -> HalogenM (State r) act cs output m (Maybe String)
 handleAction action = do
   s <- get

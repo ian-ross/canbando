@@ -8,7 +8,7 @@ import Canbando.CSS as CSS
 import Canbando.Util (blurElement, focusElement)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (for_)
-import Effect.Class (class MonadEffect)
+import Effect.Aff.Class (class MonadAff)
 import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, gets, liftEffect, mkComponent, mkEval, modify_, raise)
 import Halogen as H
 import Halogen.HTML (button, div, input, text)
@@ -49,7 +49,7 @@ type Slot id = forall query. H.Slot query Output id
 
 component ::
   forall query m.
-  MonadEffect m =>
+  MonadAff m =>
   Component query Input Output m
 component =
   mkComponent
@@ -103,15 +103,15 @@ inputId :: forall cs m. HalogenM State Action cs Output m String
 inputId =
   gets _.id <#> \id -> "label_" <> show id <> "_in"
 
-focus :: forall cs m. MonadEffect m => HalogenM State Action cs Output m Unit
+focus :: forall cs m. MonadAff m => HalogenM State Action cs Output m Unit
 focus = liftEffect <<< focusElement =<< inputId
 
-blur :: forall cs m. MonadEffect m => HalogenM State Action cs Output m Unit
+blur :: forall cs m. MonadAff m => HalogenM State Action cs Output m Unit
 blur = liftEffect <<< blurElement =<< inputId
 
 handleAction ::
   forall cs m.
-  MonadEffect m =>
+  MonadAff m =>
   Action -> HalogenM State Action cs Output m Unit
 handleAction action = case action of
   DoNothing -> pure unit

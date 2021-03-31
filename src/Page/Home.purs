@@ -16,7 +16,7 @@ import Canbando.Util (containerRow, wrapCol)
 import Control.Monad.Trans.Class (lift)
 import Data.Array (cons, snoc)
 import Data.Maybe (Maybe(..))
-import Effect.Class (class MonadEffect)
+import Effect.Aff.Class (class MonadAff)
 import Halogen (Component, ComponentHTML, HalogenM, defaultEval, mkComponent, mkEval, modify_, put)
 import Halogen as H
 import Halogen.HTML (button, div_, slot, text)
@@ -41,7 +41,7 @@ _tile = Proxy
 
 component ::
   forall q o m.
-  MonadEffect m =>
+  MonadAff m =>
   ManageBoard m =>
   IdSupply m =>
   Store m =>
@@ -77,7 +77,7 @@ render state = div_ [header Nothing, contents]
 
 handleAction ::
   forall cs o m.
-  MonadEffect m =>
+  MonadAff m =>
   ManageBoard m =>
   IdSupply m =>
   Store m =>

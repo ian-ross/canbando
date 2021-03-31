@@ -16,7 +16,6 @@ import Canbando.Routes (Route(..))
 import Control.Monad.Reader.Trans (class MonadAsk)
 import Data.Maybe (Maybe(..))
 import Effect.Aff.Class (class MonadAff)
-import Effect.Class (class MonadEffect)
 import Halogen (Component, ComponentHTML, HalogenM, defaultEval, mkComponent, mkEval, put)
 import Halogen.HTML (HTML, div_, slot, text)
 import Type.Proxy (Proxy(..))
@@ -64,7 +63,7 @@ handleQuery (Nav route a) = do
 
 render ::
   forall m.
-  MonadEffect m => IdSupply m => Store m => Navigate m =>
+  MonadAff m => IdSupply m => Store m => Navigate m =>
   State -> ComponentHTML Action Slots m
 render = case _ of
   Just route -> case route of

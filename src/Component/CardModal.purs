@@ -11,7 +11,7 @@ import Canbando.Model.Id (Id)
 import Canbando.Util (dataBsDismiss)
 import Data.Maybe (Maybe(..))
 import Data.Set (Set, delete, empty, insert)
-import Effect.Class (class MonadEffect)
+import Effect.Aff.Class (class MonadAff)
 import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, gets, mkComponent, mkEval, modify_, raise)
 import Halogen as H
 import Halogen.HTML (button, div, p, text)
@@ -56,7 +56,7 @@ initialState =
 
 component ::
   forall m.
-  MonadEffect m =>
+  MonadAff m =>
   Component Query Unit Output m
 component =
   mkComponent
@@ -72,7 +72,7 @@ catchEnter ev =
 
 render ::
   forall m.
-  MonadEffect m =>
+  MonadAff m =>
   State -> ComponentHTML Action () m
 render state =
   renderModal
@@ -110,7 +110,7 @@ modifyLabels labs = modify_ _ { labels = labs }
 
 handleAction ::
   forall m.
-  MonadEffect m =>
+  MonadAff m =>
   Action -> HalogenM State Action () Output m Unit
 handleAction = case _ of
   DoNothing -> pure unit

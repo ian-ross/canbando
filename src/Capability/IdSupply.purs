@@ -9,9 +9,9 @@ import Control.Monad.Reader.Class (class MonadAsk, asks)
 import Data.BigInt (fromInt, toBase)
 import Data.Monoid (power)
 import Data.String (codePointFromChar, length, singleton, toUpper)
-import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Aff.Class (class MonadAff)
 import Effect.Ref (Ref, modify)
-import Halogen (HalogenM, lift)
+import Halogen (HalogenM, lift, liftEffect)
 
 type IdSource row = { idSupply :: Ref Int | row }
 
@@ -26,7 +26,7 @@ instance idSupplyHalogenM ::
 hashId ::
   forall m r.
   MonadAsk (IdSource r) m =>
-  MonadEffect m =>
+  MonadAff m =>
   Char -> m String
 hashId pfx = do
   id <- asks _.idSupply >>= liftEffect <<< modify (_ + 1)

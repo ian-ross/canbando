@@ -5,15 +5,15 @@ module Canbando.Component.BoardModal
 import Prelude hiding (div)
 
 import Canbando.CSS as CSS
-import Canbando.Component.Modal (renderModal)
 import Canbando.Component.LabelEdit as Label
+import Canbando.Component.Modal (renderModal)
 import Canbando.Model.Board (Board, BoardInfo)
 import Canbando.Model.Id (Id)
 import Canbando.Util (dataBsDismiss)
 import Data.Array (filter, mapWithIndex, snoc)
 import Data.Foldable (for_, maximum)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Effect.Class (class MonadEffect)
+import Effect.Aff.Class (class MonadAff)
 import Halogen (Component, ComponentHTML, HalogenM, RefLabel(..), defaultEval, get, getHTMLElementRef, gets, liftEffect, mkComponent, mkEval, modify_, put, raise)
 import Halogen as H
 import Halogen.HTML (button, details, div, form_, input, label, p, slot, summary, text)
@@ -73,7 +73,7 @@ initialState =
 
 component ::
   forall m.
-  MonadEffect m =>
+  MonadAff m =>
   Component Query Unit Output m
 component =
   mkComponent
@@ -95,7 +95,7 @@ catchEnter ev =
 
 render ::
   forall m.
-  MonadEffect m =>
+  MonadAff m =>
   State -> ComponentHTML Action Slots m
 render model =
   renderModal
@@ -160,7 +160,7 @@ render model =
 
 handleAction ::
   forall m.
-  MonadEffect m =>
+  MonadAff m =>
   Action -> HalogenM State Action Slots Output m Unit
 handleAction = case _ of
   LabelAction id action ->

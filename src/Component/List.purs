@@ -17,7 +17,7 @@ import Canbando.Model.Id (Id)
 import Canbando.Model.List (List, ListRep, toList)
 import Data.Array (deleteAt, filter, findIndex, insertAt)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Effect.Class (class MonadEffect)
+import Effect.Aff.Class (class MonadAff)
 import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, gets, lift, liftEffect, mkComponent, mkEval, modify, modify_, raise)
 import Halogen as H
 import Halogen.HTML (button, div, h1, slot, text)
@@ -63,7 +63,7 @@ _card = Proxy
 
 component ::
   forall m.
-  MonadEffect m =>
+  MonadAff m =>
   ManageList m =>
   Component Query List Output m
 component = mkComponent
@@ -82,7 +82,7 @@ initialState { name, id, cards } =
 
 render ::
   forall m.
-  MonadEffect m =>
+  MonadAff m =>
   State -> ComponentHTML Action Slots m
 render s =
   div [classes [ CSS.bgLight, CSS.p3, CSS.rounded, CSS.listWrapper
@@ -108,7 +108,7 @@ render s =
 
 handleAction ::
   forall m.
-  MonadEffect m =>
+  MonadAff m =>
   ManageList m =>
   Action -> HalogenM State Action Slots Output m Unit
 handleAction action =
@@ -193,7 +193,7 @@ findCard id cards = findIndex (\c -> c.id == id) cards
 
 handleQuery ::
   forall m a.
-  MonadEffect m =>
+  MonadAff m =>
   ManageList m =>
   Query a -> HalogenM State Action Slots Output m (Maybe a)
 handleQuery (DeleteCard cardId a) = do
