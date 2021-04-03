@@ -3,11 +3,17 @@ module Canbando.Util
   , wrap, wrapWith, wrapCol
   , containerRow, containerCol
   , dataBsDismiss, dataBsToggle, dataBsTarget
+  , textColourStyles
   ) where
 
 import Prelude hiding (div)
 
 import Canbando.CSS as CSS
+import Color (fromHexString, textColor, toHexString, white)
+import Data.Int (fromStringAs, hexadecimal)
+import Data.Maybe (fromMaybe)
+import Data.String (drop, take)
+import Debug.Trace (spy, trace)
 import Effect (Effect)
 import Halogen (ComponentHTML)
 import Halogen.HTML (AttrName(..), div, main)
@@ -52,3 +58,8 @@ dataBsToggle = attr (AttrName "data-bs-toggle")
 
 dataBsTarget :: forall r i. String -> IProp r i
 dataBsTarget = attr (AttrName "data-bs-target")
+
+textColourStyles :: String -> String
+textColourStyles bg = "background-color: " <> bg <> ";" <> fg
+  where fg = " color: " <> toHexString (textColor bgcol) <> ";"
+        bgcol = fromMaybe white $ fromHexString bg

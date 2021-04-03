@@ -17,6 +17,7 @@ import Canbando.Capability.Resource.List (deleteCard)
 import Canbando.Capability.Store (class Store, getItem, removeItem, setItem)
 import Canbando.Model.Board (Board, BoardStore, toBoardStore)
 import Canbando.Model.Id (Id)
+import Canbando.Model.Labels (LabelInfo)
 import Canbando.Model.List (List, ListStore, toListStore)
 import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Control.Monad.Trans.Class (lift)
@@ -65,12 +66,13 @@ instance manageBoardM :: (Monad m, IdSupply m, Store m) => ManageBoard m where
     runMaybeT do
       brd <- MaybeT $ getBoardStore boardId
       oklists :: Array ListStore <- MaybeT $ sequence <$> traverse getItem brd.lists
+      labels :: Array LabelInfo <- MaybeT $ sequence <$> traverse getItem brd.labels
       let getCards list =
             sequence <$> traverse getItem list.cards <#>
             map (\cards -> { id: list.id, name: list.name, cards })
       lists <- MaybeT $ sequence <$> traverse getCards oklists
       pure { id: brd.id, name: brd.name, bgColour: brd.bgColour
-           , labels: brd.labels, lists: lists }
+           , labels: labels, lists: lists }
 
   deleteBoard boardId = do
     mroot <- getItem "root"

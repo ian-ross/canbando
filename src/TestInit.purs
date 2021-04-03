@@ -7,7 +7,6 @@ import Canbando.Capability.Store (class Store, clearStore, setItem)
 import Canbando.Model.Card (Card)
 import Canbando.Model.Id (Id)
 import Canbando.Model.List (List)
-import Data.Set (empty)
 import Data.Traversable (sequence, traverse)
 import Halogen (HalogenM, lift)
 
@@ -23,10 +22,11 @@ doInitTestStore :: forall m. IdSupply m => Store m => m Unit
 doInitTestStore = do
   id <- genId 'B'
   lists <- sequence [todo, inProgress, done]
+  labels <- initLabels
   setItem id { id
              , name: "Test board"
              , bgColour: "#CCCCCC"
-             , labels: []
+             , labels: labels
              , lists: map _.id lists }
   setItem "root" [id]
 
@@ -43,7 +43,7 @@ initCard ::
 initCard list title = do
   id <- genId 'C'
   setItem id { id, title, list }
-  pure { id, title, labels: empty }
+  pure { id, title, labels: [] }
 
 todo :: forall m. IdSupply m => Store m => m List
 todo = initList "To Do" ["Task #3", "Task #4", "Task #5", "Task #6", "Task #7"]
@@ -53,3 +53,16 @@ inProgress = initList "In progress" ["Task #1", "Task #2"]
 
 done :: forall m. IdSupply m => Store m => m List
 done = initList "Done" []
+
+initLabels :: forall m. IdSupply m => Store m => m (Array Id)
+initLabels = do
+  id1 <- genId 'T'
+  id2 <- genId 'T'
+  id3 <- genId 'T'
+  let info1 = { id: id1, name: "label-1", colour: "#FF0000" }
+  let info2 = { id: id2, name: "label-2", colour: "#00FF00" }
+  let info3 = { id: id3, name: "label-3", colour: "#0000FF" }
+  setItem id1 info1
+  setItem id2 info2
+  setItem id3 info3
+  pure [id1, id2, id3]

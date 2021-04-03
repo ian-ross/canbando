@@ -5,20 +5,28 @@ module Canbando.Component.CardModal
 import Prelude hiding (div)
 
 import Canbando.CSS as CSS
+import Canbando.Capability.Resource.Labels (class GetLabels, LabelEvent(..), getLabels)
 import Canbando.Component.Modal (renderModal)
+import Canbando.Env (Env)
 import Canbando.Model.Card (Card)
 import Canbando.Model.Id (Id)
-import Canbando.Util (dataBsDismiss)
+import Canbando.Model.Labels (Labels)
+import Canbando.Util (dataBsDismiss, textColourStyles)
+import Control.Monad.Reader.Trans (class MonadAsk, asks)
+import Data.Array (delete, nub, snoc)
 import Data.Maybe (Maybe(..))
-import Data.Set (Set, delete, empty, insert)
+import Data.Set (Set)
+import Debug.Trace (traceM)
 import Effect.Aff.Class (class MonadAff)
-import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, gets, mkComponent, mkEval, modify_, raise)
+import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, gets, mkComponent, mkEval, modify_, raise, subscribe)
 import Halogen as H
-import Halogen.HTML (button, div, p, text)
+import Halogen.HTML (button, details, div, input, p, summary, text)
+import Halogen.HTML as HH
 import Halogen.HTML.Events (onClick)
-import Halogen.HTML.Properties (ButtonType(..), class_, classes, type_)
+import Halogen.HTML.Properties (ButtonType(..), InputType(..), class_, classes, for, id, style, type_, value)
 import Web.UIEvent.KeyboardEvent (KeyboardEvent, key)
 
+type Input = Unit
 
 type State =
   { visible :: Boolean
@@ -26,9 +34,11 @@ type State =
   , id :: Id
   , listId :: Id
   , name :: String
-  , labels :: Set String }
+  , labels :: Array Id
+  , boardLabels :: Labels }
 
 data Action = DoNothing
+            | Initialize
             | Dismiss
             | SaveChanges
             | StartDelete
@@ -36,6 +46,7 @@ data Action = DoNothing
             | ConfirmDelete
             | AddLabel String
             | RemoveLabel String
+            | LabelAction LabelEvent
 
 data Query a = Show Card Id a
 
@@ -51,19 +62,23 @@ initialState =
   , id: ""
   , listId : ""
   , name: ""
-  , labels: empty
+  , labels: []
+  , boardLabels: []
   , deleting: false }
 
 component ::
   forall m.
   MonadAff m =>
-  Component Query Unit Output m
+  MonadAsk Env m =>
+  GetLabels m =>
+  Component Query Input Output m
 component =
   mkComponent
   { initialState: const initialState
   , render
   , eval : mkEval $ defaultEval { handleQuery = handleQuery
-                                , handleAction = handleAction }
+                                , handleAction = handleAction
+                                , initialize = Just Initialize }
   }
 
 catchEnter :: KeyboardEvent -> Action
@@ -78,7 +93,12 @@ render state =
   renderModal
     "cardDetailsModal" "cardDetailsModalLabel" state.name
     Dismiss
-    [ div [ classes [CSS.card, CSS.textDanger, CSS.mb3] ]
+    [ div [class_ CSS.mb3]
+      [ details [] $
+        [ summary [class_ CSS.formLabel] [text "Labels"] ]
+        <> map (onelabel state.labels) state.boardLabels
+      ]
+    , div [ classes [CSS.card, CSS.textDanger, CSS.mb3] ]
       [ div [classes [CSS.cardHeader]] [text "DANGER!"]
       , div [class_ CSS.cardBody]
         [ p [class_ CSS.cardText]
@@ -104,19 +124,43 @@ render state =
              , dataBsDismiss "modal", onClick (const SaveChanges) ]
       [text "Save changes"]
     ]
+    where onelabel cardLabel label =
+            div [class_ CSS.formCheck]
+            [ input [ class_ CSS.formCheckInput
+                    , type_ InputCheckbox, value ""
+                    , id "flexCheckDefault"]
+            , HH.label [ classes [CSS.formCheckLabel, CSS.cardModalLabel]
+                       , for "flexCheckDefault"
+                       , style (textColourStyles label.colour)]
+              [text label.name]
+            ]
 
-modifyLabels :: forall m. Set String -> HalogenM State Action () Output m Unit
+modifyLabels :: forall m. Array Id -> HalogenM State Action () Output m Unit
 modifyLabels labs = modify_ _ { labels = labs }
 
 handleAction ::
   forall m.
   MonadAff m =>
+  MonadAsk Env m =>
+  GetLabels m =>
   Action -> HalogenM State Action () Output m Unit
 handleAction = case _ of
   DoNothing -> pure unit
 
+  Initialize -> do
+    emitter <- asks _.labelEmitter
+    _ <- subscribe $ LabelAction <$> emitter
+    blabs <- getLabels
+    modify_ _ { boardLabels = blabs }
+
+  LabelAction LabelsReset -> do
+    blabs <- getLabels
+    modify_ _ { boardLabels = blabs }
+
+  LabelAction evt -> traceM evt
+
   AddLabel lab ->
-    modifyLabels =<< insert lab <$> gets _.labels
+    modifyLabels =<< nub <<< (_ `snoc` lab) <$> gets _.labels
 
   RemoveLabel lab ->
     modifyLabels =<< delete lab <$> gets _.labels

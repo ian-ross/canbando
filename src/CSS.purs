@@ -84,6 +84,9 @@ cardDragIndicate = ClassName "card-drag-indicate"
 cardMenu :: ClassName
 cardMenu = ClassName "card-menu"
 
+cardModalLabel :: ClassName
+cardModalLabel = ClassName "card-modal-label"
+
 boardTile :: ClassName
 boardTile = ClassName "board-tile"
 

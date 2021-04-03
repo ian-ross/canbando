@@ -7,30 +7,31 @@ module Canbando.Model.Board
 import Prelude
 
 import Canbando.Model.Id (Id)
+import Canbando.Model.Labels (LabelInfo)
 import Canbando.Model.List (List)
 import Data.Array (snoc)
 import Type.Row (type (+))
 
 
-type BoardInfo row =
+type BoardInfo label row =
   ( id :: Id
   , name :: String
   , bgColour :: String
-  , labels :: Array { label :: String, colour :: String }
+  , labels :: Array label
   | row )
 
 type BoardLists listrep row =
   ( lists :: Array listrep
   | row )
 
-type BoardRep listrep row =
-  { | BoardInfo + BoardLists listrep row }
+type BoardRep label listrep row =
+  { | BoardInfo label + BoardLists listrep row }
 
-type Board = BoardRep List ()
+type Board = BoardRep LabelInfo List ()
 
-type BoardStore = BoardRep Id ()
+type BoardStore = BoardRep Id Id ()
 
-toBoard :: forall row. BoardRep List row -> Board
+toBoard :: forall row. BoardRep LabelInfo List row -> Board
 toBoard brd =
   { id: brd.id
   , name: brd.name
@@ -38,13 +39,14 @@ toBoard brd =
   , labels: brd.labels
   , lists: brd.lists }
 
-toBoardStore :: forall row. BoardRep List row -> BoardStore
+toBoardStore :: forall row. BoardRep LabelInfo List row -> BoardStore
 toBoardStore brd =
   { id: brd.id
   , name: brd.name
   , bgColour: brd.bgColour
-  , labels: brd.labels
+  , labels: map _.id brd.labels
   ,lists: map _.id brd.lists }
 
-addListToBoard :: forall list row. list -> BoardRep list row -> BoardRep list row
+addListToBoard ::
+  forall label list row. list -> BoardRep label list row -> BoardRep label list row
 addListToBoard list brd = brd { lists = brd.lists `snoc` list }

@@ -5,14 +5,17 @@ module Canbando.Component.BoardModal
 import Prelude hiding (div)
 
 import Canbando.CSS as CSS
+import Canbando.Capability.IdSupply (class IdSupply, genId)
+import Canbando.Capability.Resource.Labels (class EditLabels, deleteLabel, updateLabel)
 import Canbando.Component.LabelEdit as Label
 import Canbando.Component.Modal (renderModal)
 import Canbando.Model.Board (Board, BoardInfo)
 import Canbando.Model.Id (Id)
+import Canbando.Model.Labels (LabelInfo)
 import Canbando.Util (dataBsDismiss)
-import Data.Array (filter, mapWithIndex, snoc)
-import Data.Foldable (for_, maximum)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Array (filter, snoc)
+import Data.Foldable (for_)
+import Data.Maybe (Maybe(..))
 import Effect.Aff.Class (class MonadAff)
 import Halogen (Component, ComponentHTML, HalogenM, RefLabel(..), defaultEval, get, getHTMLElementRef, gets, liftEffect, mkComponent, mkEval, modify_, put, raise)
 import Halogen as H
@@ -24,9 +27,9 @@ import Web.HTML.HTMLInputElement (fromHTMLElement, setValue)
 import Web.UIEvent.KeyboardEvent (KeyboardEvent, key)
 
 
-type BareBoardInfo = { | BoardInfo () }
+type BareBoardInfo = { | BoardInfo LabelInfo () }
 
-toBareBoardInfo :: forall row. { | BoardInfo row } -> BareBoardInfo
+toBareBoardInfo :: forall row. { | BoardInfo LabelInfo row } -> BareBoardInfo
 toBareBoardInfo { id, name, bgColour, labels } = { id, name, bgColour, labels }
 
 type State =
@@ -46,14 +49,14 @@ data Action = DoNothing
             | CancelDelete
             | ConfirmDelete
             | AddLabel
-            | LabelAction Int Label.Output
+            | LabelAction Id Label.Output
 
 data Query a = Show Board a
 
 data Output = Updated BareBoardInfo
             | Deleted Id
 
-type Slots = ( label :: Label.Slot Int )
+type Slots = ( label :: Label.Slot Id )
 
 _label :: Proxy "label"
 _label = Proxy
@@ -74,6 +77,8 @@ initialState =
 component ::
   forall m.
   MonadAff m =>
+  IdSupply m =>
+  EditLabels m =>
   Component Query Unit Output m
 component =
   mkComponent
@@ -161,6 +166,8 @@ render model =
 handleAction ::
   forall m.
   MonadAff m =>
+  IdSupply m =>
+  EditLabels m =>
   Action -> HalogenM State Action Slots Output m Unit
 handleAction = case _ of
   LabelAction id action ->
@@ -168,17 +175,19 @@ handleAction = case _ of
       Label.Deleted -> do
         labs <- filter (\l -> l.id /= id) <$> gets _.labels
         modify_ _ { labels = labs }
+        deleteLabel id
 
       Label.Updated dat -> do
         labs <- gets _.labels
         let newlabs = map (\l -> if l.id /= id then l
                                  else l { name = dat.name, colour = dat.colour}) labs
         modify_ _ { labels = newlabs }
+        updateLabel { id, name: dat.name, colour: dat.colour }
 
   AddLabel -> do
     labs <- gets _.labels
-    let newId = 1 + (fromMaybe 0 $ maximum $ map _.id labs)
-        newLabel = { id: newId, name: "New label", colour: "#FFFFFF"}
+    newId <- genId 'T'
+    let newLabel = { id: newId, name: "New label", colour: "#FFFFFF"}
     modify_ _ { labels = labs `snoc` newLabel }
 
   DoNothing -> pure unit
@@ -202,9 +211,8 @@ handleAction = case _ of
   SaveChanges -> do
     st <- get
     for_ st.board \b -> do
-      let mklab { id, name, colour } = { label: name, colour }
-          newb = b { name = st.name, bgColour = st.bgColour
-                   , labels = map mklab st.labels }
+      let newb = b { name = st.name, bgColour = st.bgColour
+                   , labels = st.labels }
       put $ st { board = Just newb }
       raise (Updated newb)
 
@@ -221,8 +229,8 @@ handleQuery ::
   forall m a.
   Query a -> HalogenM State Action Slots Output m (Maybe a)
 handleQuery (Show board a) = do
-  let mklab id lab = { id, name: lab.label, colour: lab.colour }
+  let mklab lab = { id: lab.id, name: lab.label, colour: lab.colour }
   modify_ \s -> s { board = Just $ toBareBoardInfo board
                   , name = board.name, bgColour = board.bgColour
-                  , labels = mapWithIndex mklab board.labels }
+                  , labels = board.labels }
   pure $ Just a

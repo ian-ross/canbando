@@ -29,7 +29,6 @@ import Control.Monad.Maybe.Trans (MaybeT(..), runMaybeT)
 import Control.Monad.Trans.Class (lift)
 import Data.Array (delete, insertAt)
 import Data.Maybe (Maybe, fromMaybe)
-import Data.Set (empty)
 
 
 class Monad m <= ManageList m where
@@ -58,7 +57,7 @@ instance manageListM :: (Monad m, IdSupply m, Store m) => ManageList m where
   addCard listId = runMaybeT do
     list <- MaybeT $ getItem listId
     newId <- lift $ genId 'C'
-    let card = { id: newId, title: "New card", labels: empty }
+    let card = { id: newId, title: "New card", labels: [] }
     lift $ setItem card.id $ toCardStore card listId
     lift $ setItem listId $ list { cards = list.cards <> [card.id] }
     pure card

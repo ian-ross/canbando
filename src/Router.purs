@@ -6,6 +6,7 @@ import Prelude
 
 import Canbando.Capability.IdSupply (class IdSupply)
 import Canbando.Capability.Navigate (class Navigate)
+import Canbando.Capability.Resource.Labels (class EditLabels, class GetLabels, class SetLabels)
 import Canbando.Capability.Store (class Store)
 import Canbando.Env (Env)
 import Canbando.Model.Id (Id)
@@ -38,9 +39,13 @@ type Slots =
 component ::
   forall m.
   MonadAff m =>
+  MonadAsk Env m =>
   Navigate m =>
   MonadAsk Env m =>
   IdSupply m => Store m =>
+  GetLabels m =>
+  SetLabels m =>
+  EditLabels m =>
   Navigate m =>
   Component Query Input Void m
 component =  mkComponent
@@ -63,7 +68,14 @@ handleQuery (Nav route a) = do
 
 render ::
   forall m.
-  MonadAff m => IdSupply m => Store m => Navigate m =>
+  MonadAff m =>
+  MonadAsk Env m =>
+  IdSupply m =>
+  Store m =>
+  GetLabels m =>
+  SetLabels m =>
+  EditLabels m =>
+  Navigate m =>
   State -> ComponentHTML Action Slots m
 render = case _ of
   Just route -> case route of

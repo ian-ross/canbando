@@ -19,12 +19,12 @@ import Web.UIEvent.KeyboardEvent (KeyboardEvent, key, toEvent)
 
 
 type Input =
-  { id :: Int
+  { id :: String
   , name :: String
   , colour :: String }
 
 type State =
-  { id :: Int
+  { id :: String
   , name :: String
   , colour :: String
   , edit :: String

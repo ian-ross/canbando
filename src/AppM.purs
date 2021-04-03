@@ -21,19 +21,24 @@ module Canbando.AppM (AppM(..), runApp) where
 
 import Prelude
 
-import Canbando.Capability.IdSupply (class IdSupply, mkId)
+import Canbando.Capability.IdSupply (class IdSupply, genId, mkId)
 import Canbando.Capability.Navigate (class Navigate)
+import Canbando.Capability.Resource.Labels (class EditLabels, class GetLabels, class SetLabels, LabelEvent(..))
 import Canbando.Capability.Store (class Store, getItem, setItem)
 import Canbando.Env (Env)
 import Canbando.Routes (route)
 import Control.Monad.Reader.Trans (class MonadAsk, ReaderT, asks, runReaderT)
+import Data.Array (filter, snoc)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
+import Effect.Ref (modify_)
+import Effect.Ref as Ref
 import Foreign (isNull, unsafeFromForeign, unsafeToForeign)
 import Halogen (liftAff, liftEffect)
+import Halogen.Subscription (notify)
 import Localforage as LF
 import Routing.Duplex (print)
 
@@ -135,6 +140,29 @@ instance storeAppM :: Store AppM where
     run \s -> LF.getItem s id <#> case _ of
       Left _ -> Nothing
       Right v -> if isNull v then Nothing else Just (unsafeFromForeign v)
+
+
+instance getLabelsAppM :: GetLabels AppM where
+  getLabels = liftEffect <<< Ref.read =<< asks _.labels
+
+instance setLabelsAppM :: SetLabels AppM where
+  setLabels labels = do
+    liftEffect <<< Ref.write labels =<< asks _.labels
+    liftEffect <<< flip notify LabelsReset =<< asks _.labelListener
+
+instance editLabelsAppM :: EditLabels AppM where
+  addLabel = do
+    id <- genId 'T'
+    let info = { id, name: "New label", colour: "white" }
+    liftEffect <<< modify_ (_ `snoc` info) =<< asks _.labels
+    pure id
+  deleteLabel id = do
+    liftEffect <<< modify_ (filter (\l -> l.id /= id)) =<< asks _.labels
+    liftEffect <<< flip notify (LabelDeleted id) =<< asks _.labelListener
+  updateLabel info = do
+    liftEffect <<< modify_ (_ `snoc` info) =<< asks _.labels
+    liftEffect <<< flip notify (LabelUpdated info) =<< asks _.labelListener
+
 
 -- Helper function to run actions that need access to a `Localforage`
 -- store.

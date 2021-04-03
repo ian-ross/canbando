@@ -6,13 +6,12 @@ module Canbando.Model.Card
 import Canbando.Model.Id (Id)
 import Data.Argonaut (Json, JsonDecodeError, decodeJson, encodeJson)
 import Data.Either (Either)
-import Data.Set (Set)
 
 
 type CardRep row =
   ( id :: Id
   , title :: String
-  , labels :: Set String
+  , labels :: Array Id
   | row )
 
 type Card = { | CardRep () }

@@ -3,19 +3,23 @@ module Canbando.Page.Board where
 import Prelude hiding (div)
 
 import Canbando.CSS as CSS
+import Canbando.Capability.IdSupply (class IdSupply)
 import Canbando.Capability.Navigate (class Navigate, navigate)
 import Canbando.Capability.Resource.Board (class ManageBoard, addList, deleteBoard, deleteList, getBoard, moveList, updateBoard)
+import Canbando.Capability.Resource.Labels (class EditLabels, class GetLabels, class SetLabels, setLabels)
 import Canbando.Capability.Resource.List (class ManageList)
 import Canbando.Component.BoardModal (Output(..), Slot, Query(..), component) as BoardModal
 import Canbando.Component.CardModal (Output(..), Slot, Query(..), component) as CardModal
 import Canbando.Component.Header (header)
 import Canbando.Component.Icon (icon)
 import Canbando.Component.List (Direction(..), Output(..), Slot, Query(..), component) as List
+import Canbando.Env (Env)
 import Canbando.Model.Board (Board, addListToBoard)
 import Canbando.Model.Id (Id)
 import Canbando.Model.List (List)
 import Canbando.Routes (Route(..))
 import Canbando.Util (wrap, wrapWith)
+import Control.Monad.Reader.Trans (class MonadAsk)
 import Data.Array (deleteAt, filter, findIndex, insertAt, length, (!!))
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -52,6 +56,11 @@ type Slots = ( list :: List.Slot Id
 component ::
   forall q o m.
   MonadAff m =>
+  MonadAsk Env m =>
+  IdSupply m =>
+  GetLabels m =>
+  SetLabels m =>
+  EditLabels m =>
   ManageList m =>
   ManageBoard m =>
   Navigate m =>
@@ -70,6 +79,10 @@ initialState id = { id, board: NotAsked }
 render ::
   forall m.
   MonadAff m =>
+  MonadAsk Env m =>
+  IdSupply m =>
+  GetLabels m =>
+  EditLabels m =>
   ManageList m =>
   State -> ComponentHTML Action Slots m
 render state = div_ [boardModal, cardModal, header name, wrapper contents]
@@ -100,6 +113,7 @@ handleAction ::
   forall o m.
   ManageBoard m =>
   Navigate m =>
+  SetLabels m =>
   Action -> HalogenM State Action Slots o m Unit
 handleAction = case _ of
   Initialize -> do
@@ -109,6 +123,7 @@ handleAction = case _ of
       Nothing -> modify_ \s -> s { board = Failure "Couldn't load board!" }
       Just board -> do
         modify_ \s -> s { board = Success board }
+        setLabels board.labels
         tell (Proxy :: _ "boardModal") unit (BoardModal.Show board)
 
   AddList -> do
@@ -146,7 +161,9 @@ handleAction = case _ of
 
 
 deleteListFromBoard :: Id -> Board -> Board
-deleteListFromBoard listId brd = brd { lists = filter (\lst -> lst.id /= listId) brd.lists }
+deleteListFromBoard listId brd =
+  brd { lists = filter (\lst -> lst.id /= listId) brd.lists }
+
 
 doMove ::
   forall cs o m.

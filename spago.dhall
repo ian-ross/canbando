@@ -2,10 +2,12 @@
 , dependencies =
   [ "argonaut"
   , "bigints"
+  , "colors"
   , "console"
   , "debug"
   , "effect"
   , "halogen"
+  , "halogen-subscriptions"
   , "localforage"
   , "psci-support"
   , "remotedata"
