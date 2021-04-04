@@ -8,7 +8,7 @@ import Canbando.CSS as CSS
 import Canbando.Capability.Resource.Labels (class GetLabels, getLabels)
 import Canbando.Component.Modal (renderModal)
 import Canbando.Env (Env)
-import Canbando.Model.Card (Card)
+import Canbando.Model.Card (Card, CheckListItem)
 import Canbando.Model.Id (Id)
 import Canbando.Model.Labels (LabelEvent(..), Labels)
 import Canbando.Util (dataBsDismiss, textColourStyles)
@@ -33,6 +33,7 @@ type State =
   , listId :: Id
   , name :: String
   , labels :: Array Id
+  , checklist :: Array CheckListItem
   , boardLabels :: Labels }
 
 data Action = DoNothing
@@ -48,7 +49,11 @@ data Action = DoNothing
 data Query a = Show Card Id a
 
 data Output
-  = Updated { cardId :: Id, listId :: Id, title :: String, labels :: Array Id }
+  = Updated { cardId :: Id
+            , listId :: Id
+            , title :: String
+            , labels :: Array Id
+            , checklist :: Array CheckListItem }
   | Deleted { cardId :: Id, listId :: Id }
 
 type Slot = H.Slot Query Output Unit
@@ -61,6 +66,7 @@ initialState =
   , listId : ""
   , name: ""
   , labels: []
+  , checklist: []
   , boardLabels: []
   , deleting: false }
 
@@ -168,8 +174,8 @@ handleAction = case _ of
 
   SaveChanges -> do
     s <- get
-    raise $ Updated { cardId: s.id, listId: s.listId
-                    , title: s.name, labels: s.labels }
+    raise $ Updated { cardId: s.id, listId: s.listId, title: s.name
+                    , labels: s.labels, checklist: s.checklist }
 
   StartDelete -> modify_ _ { deleting = true }
 

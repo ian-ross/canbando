@@ -45,8 +45,8 @@ initCard ::
   forall m. IdSupply m => Store m => Id -> String -> m Card
 initCard list title = do
   id <- genId 'C'
-  setItem id { id, title, list, labels: [] }
-  pure { id, title, labels: [] }
+  setItem id { id, title, list, labels: [], checklist: [] }
+  pure { id, title, labels: [], checklist: [] }
 
 todo :: forall m. IdSupply m => Store m => Array Id -> m List
 todo labels = do

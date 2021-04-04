@@ -93,6 +93,7 @@ initialState inp =
   { id: inp.id
   , title: inp.title
   , labels: inp.labels
+  , checklist: inp.checklist
   , edit: ""
   , editing: false
   , dragging: false
@@ -194,7 +195,7 @@ handleAction action = do
     DragEnd ev -> do
       effect <- liftEffect $ dropEffect (dataTransfer ev)
       modify_ \st -> st { dragging = false, dragIndicate = false }
-      when (effect == Move) $ raise (CardDeletedByMove s.id)
+      when (effect /= None) $ raise (CardDeletedByMove s.id)
 
     Drop ev -> do
       modify_ \st -> st { dragging = false, dragIndicate = false }
@@ -209,7 +210,9 @@ handleAction action = do
 
 
 encodeDragData :: State -> String
-encodeDragData s = stringify (encodeJson { id: s.id, title: s.title })
+encodeDragData s =
+  stringify (encodeJson { id: s.id, title: s.title
+                        , labels: s.labels, checklist: s.checklist })
 
 decodeDragData :: String -> Maybe Card
 decodeDragData = hush <<< (parseJson >=> decodeJson)

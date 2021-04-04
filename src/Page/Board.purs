@@ -157,8 +157,8 @@ handleAction = case _ of
   CardModalAction (CardModal.Deleted { cardId, listId }) ->
     tell (Proxy :: _ "list") listId (List.DeleteCard { cardId })
 
-  CardModalAction (CardModal.Updated { cardId, listId, title, labels }) ->
-    tell (Proxy :: _ "list") listId (List.UpdateCard { cardId, title, labels })
+  CardModalAction (CardModal.Updated { cardId, listId, title, labels, checklist }) ->
+    tell (Proxy :: _ "list") listId (List.UpdateCard { cardId, title, labels, checklist })
 
 
 deleteListFromBoard :: Id -> Board -> Board

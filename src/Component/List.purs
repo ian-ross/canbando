@@ -14,7 +14,7 @@ import Canbando.Component.Editable (EditAction, editableWith)
 import Canbando.Component.Editable as Editable
 import Canbando.Component.Icon (icon, iconButton)
 import Canbando.Env (Env)
-import Canbando.Model.Card (Card)
+import Canbando.Model.Card (Card, CheckListItem)
 import Canbando.Model.Id (Id)
 import Canbando.Model.List (List, ListRep, toList)
 import Control.Monad.Reader.Trans (class MonadAsk)
@@ -54,8 +54,12 @@ data Action
   | Delete
   | Move Direction
 
-data Query a = DeleteCard { cardId :: Id } a
-             | UpdateCard { cardId :: Id, title :: String, labels :: Array Id } a
+data Query a
+  = DeleteCard { cardId :: Id } a
+  | UpdateCard { cardId :: Id
+               , title :: String
+               , labels :: Array Id
+               , checklist :: Array CheckListItem } a
 
 type Slot id = H.Slot Query Output id
 
@@ -208,8 +212,8 @@ handleQuery (DeleteCard { cardId } a) = do
   lift $ deleteCard cardId
   modify_ \s -> s { cards = filter (\c -> c.id /= cardId) s.cards }
   pure $ Just a
-handleQuery (UpdateCard { cardId, title, labels } a) = do
-  lift $ updateCard cardId { id: cardId, title, labels }
+handleQuery (UpdateCard { cardId, title, labels, checklist } a) = do
+  lift $ updateCard cardId { id: cardId, title, labels, checklist }
   let update c =
         if c.id == cardId
         then c { title = title, labels = labels }

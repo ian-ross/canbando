@@ -57,7 +57,7 @@ instance manageListM :: (Monad m, IdSupply m, Store m) => ManageList m where
   addCard listId = runMaybeT do
     list <- MaybeT $ getItem listId
     newId <- lift $ genId 'C'
-    let card = { id: newId, title: "New card", labels: [] }
+    let card = { id: newId, title: "New card", labels: [], checklist: [] }
     lift $ setItem card.id $ toCardStore card listId
     lift $ setItem listId $ list { cards = list.cards <> [card.id] }
     pure card

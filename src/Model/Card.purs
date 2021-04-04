@@ -1,5 +1,5 @@
 module Canbando.Model.Card
-       ( Card, CardRep, CardStore
+       ( Card, CardRep, CardStore, CheckListItem
        , encode, decode, toCard, toCardStore
        ) where
 
@@ -8,10 +8,13 @@ import Data.Argonaut (Json, JsonDecodeError, decodeJson, encodeJson)
 import Data.Either (Either)
 
 
+type CheckListItem = { name :: String, done :: Boolean }
+
 type CardRep row =
   ( id :: Id
   , title :: String
   , labels :: Array Id
+  , checklist :: Array CheckListItem
   | row )
 
 type Card = { | CardRep () }
@@ -25,7 +28,12 @@ decode :: Json -> Either JsonDecodeError Card
 decode = decodeJson
 
 toCard :: forall row. { | CardRep row } -> Card
-toCard card = { id: card.id, title: card.title, labels: card.labels }
+toCard card =
+  { id: card.id
+  , title: card.title
+  , labels: card.labels
+  , checklist: card.checklist }
 
 toCardStore :: Card -> Id -> CardStore
-toCardStore { id, title, labels } list = { id, title, labels, list }
+toCardStore { id, title, labels, checklist } list =
+  { id, title, labels, checklist, list }
