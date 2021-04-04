@@ -109,6 +109,7 @@ main > .container-fluid {
 .card-modal-label {
   padding: 0px 4px;
   border-radius: 4px;
+  border: 1px solid black;
 }
 
 .list-menu {
@@ -147,4 +148,5 @@ div:focus {
   width: 2rem;
   height: 0.75rem;
   border-radius: 0.25rem;
+  border: 1px solid black;
 }

@@ -3,7 +3,7 @@ module Canbando.TestInit (initTestStore) where
 import Prelude
 
 import Canbando.Capability.IdSupply (class IdSupply, genId)
-import Canbando.Capability.Store (class Store, clearStore, setItem)
+import Canbando.Capability.Store (class Store, clearStore, getItem, setItem)
 import Canbando.Model.Card (Card)
 import Canbando.Model.Id (Id)
 import Canbando.Model.List (List)
@@ -51,12 +51,15 @@ initCard list title = do
 todo :: forall m. IdSupply m => Store m => Array Id -> m List
 todo labels = do
   lst <- initList "To Do" ["Task #3", "Task #4", "Task #5", "Task #6", "Task #7"]
-  let c1 = unsafePartial $ fromJust $ lst.cards !! 0
-  setItem c1.id c1 { labels = take 1 labels }
-  let c2 = unsafePartial $ fromJust $ lst.cards !! 1
-  setItem c2.id c2 { labels = take 2 labels }
-  let c3 = unsafePartial $ fromJust $ lst.cards !! 2
-  setItem c3.id c3 { labels = take 3 labels }
+  let process :: Int -> Int -> m Unit
+      process idx nlabels = do
+        let cint = unsafePartial $ fromJust $ lst.cards !! idx
+        mc <- getItem cint.id
+        let c = unsafePartial $ fromJust mc
+        setItem cint.id c { labels = take nlabels labels }
+  process 0 1
+  process 1 2
+  process 2 3
   pure lst
 
 inProgress :: forall m. IdSupply m => Store m => m List

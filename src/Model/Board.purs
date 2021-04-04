@@ -45,7 +45,7 @@ toBoardStore brd =
   , name: brd.name
   , bgColour: brd.bgColour
   , labels: map _.id brd.labels
-  ,lists: map _.id brd.lists }
+  , lists: map _.id brd.lists }
 
 addListToBoard ::
   forall label list row. list -> BoardRep label list row -> BoardRep label list row

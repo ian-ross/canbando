@@ -24,7 +24,7 @@ import Prelude
 import Canbando.Capability.IdSupply (class IdSupply, genId, mkId)
 import Canbando.Capability.Navigate (class Navigate)
 import Canbando.Capability.Resource.Labels (class EditLabels, class GetLabels, class SetLabels)
-import Canbando.Capability.Store (class Store, getItem, setItem)
+import Canbando.Capability.Store (class Store, getItem, removeItem, setItem)
 import Canbando.Env (Env)
 import Canbando.Model.Labels (LabelEvent(..), Labels)
 import Canbando.Routes (route)
@@ -167,10 +167,13 @@ instance editLabelsAppM :: EditLabels AppM where
     id <- genId 'T'
     let info = { id, name: "New label", colour: "white" }
     modifyLabels (_ `snoc` info)
+    setItem id info
     pure id
-  deleteLabel id =
+  deleteLabel id = do
+    removeItem id
     modifyLabels (filter (\l -> l.id /= id))
-  updateLabel info =
+  updateLabel info = do
+    setItem info.id info
     modifyLabels (\labs -> filter (\l -> l.id /= info.id) labs `snoc` info)
 
 
