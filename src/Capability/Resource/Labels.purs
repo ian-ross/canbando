@@ -16,7 +16,6 @@ module Canbando.Capability.Resource.Labels
   , setLabels
   , class EditLabels
   , addLabel, deleteLabel, updateLabel
-  , LabelEvent(..)
   ) where
 
 import Prelude
@@ -24,12 +23,6 @@ import Prelude
 import Canbando.Model.Id (Id)
 import Canbando.Model.Labels (Labels, LabelInfo)
 import Halogen (HalogenM, lift)
-
-
-data LabelEvent
-  = LabelDeleted Id
-  | LabelUpdated LabelInfo
-  | LabelsReset
 
 
 class Monad m <= GetLabels m where

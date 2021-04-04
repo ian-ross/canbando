@@ -6,15 +6,18 @@ module Canbando.Component.List (
 import Prelude hiding (div)
 
 import Canbando.CSS as CSS
+import Canbando.Capability.Resource.Labels (class GetLabels)
 import Canbando.Capability.Resource.List (class ManageList, addCard, deleteCard, moveCard, updateCard, updateList)
 import Canbando.Component.Card (Output(..), Slot, component) as Card
 import Canbando.Component.Card (cardDragData)
 import Canbando.Component.Editable (EditAction, editableWith)
 import Canbando.Component.Editable as Editable
 import Canbando.Component.Icon (icon, iconButton)
+import Canbando.Env (Env)
 import Canbando.Model.Card (Card)
 import Canbando.Model.Id (Id)
 import Canbando.Model.List (List, ListRep, toList)
+import Control.Monad.Reader.Trans (class MonadAsk)
 import Data.Array (deleteAt, filter, findIndex, insertAt)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Effect.Aff.Class (class MonadAff)
@@ -64,6 +67,8 @@ _card = Proxy
 component ::
   forall m.
   MonadAff m =>
+  MonadAsk Env m =>
+  GetLabels m =>
   ManageList m =>
   Component Query List Output m
 component = mkComponent
@@ -83,6 +88,8 @@ initialState { name, id, cards } =
 render ::
   forall m.
   MonadAff m =>
+  MonadAsk Env m =>
+  GetLabels m =>
   State -> ComponentHTML Action Slots m
 render s =
   div [classes [ CSS.bgLight, CSS.p3, CSS.rounded, CSS.listWrapper

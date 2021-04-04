@@ -6,20 +6,25 @@ module Canbando.Component.Card (
 import Prelude hiding (div)
 
 import Canbando.CSS as CSS
+import Canbando.Capability.Resource.Labels (class GetLabels, getLabels)
+import Canbando.Env (Env)
 import Canbando.Model.Card (Card, CardRep, toCard)
 import Canbando.Model.Id (Id)
-import Canbando.Util (dataBsTarget, dataBsToggle, focusElement)
+import Canbando.Model.Labels (LabelEvent(..), Labels)
+import Canbando.Util (dataBsTarget, dataBsToggle, focusElement, textColourStyles)
+import Control.Monad.Reader.Trans (class MonadAsk, asks)
 import Data.Argonaut (decodeJson, encodeJson, parseJson, stringify)
+import Data.Array (find, intersect)
 import Data.Either (hush)
 import Data.Maybe (Maybe(..))
 import Data.MediaType (MediaType(..))
 import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
-import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, liftEffect, mkComponent, mkEval, modify, modify_, raise)
+import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, gets, liftEffect, mkComponent, mkEval, modify, modify_, raise, subscribe)
 import Halogen as H
 import Halogen.HTML (button, div, input, text)
 import Halogen.HTML.Events (onBlur, onClick, onDragEnd, onDragEnter, onDragLeave, onDragOver, onDragStart, onDrop, onKeyDown, onKeyUp, onValueChange)
-import Halogen.HTML.Properties (ButtonType(..), classes, draggable, id, tabIndex, type_, value)
+import Halogen.HTML.Properties (ButtonType(..), class_, classes, draggable, id, style, tabIndex, type_, value)
 import Web.Event.Event (preventDefault, stopPropagation)
 import Web.HTML.Event.DataTransfer (DropEffect(..), dropEffect, getData, setData)
 import Web.HTML.Event.DragEvent (DragEvent, dataTransfer, toEvent)
@@ -33,7 +38,8 @@ type StateInfo =
   ( edit :: String
   , editing :: Boolean
   , dragging :: Boolean
-  , dragIndicate :: Boolean )
+  , dragIndicate :: Boolean
+  , boardLabels :: Labels )
 
 type State =  { | CardRep StateInfo }
 
@@ -44,11 +50,13 @@ data Output
   | CardUpdated Id Card
   | OpenCardModal Card
 
-data Action = StartEditing | Edited String | Accept | Reject
-            | DeleteCard MouseEvent
-            | DragStart DragEvent | DragEnd DragEvent | Drop DragEvent
-            | DragIndicate Boolean DragEvent
-            | ModalOpenClicked | DoNothing
+data Action
+  = Initialize | LabelAction LabelEvent
+  | StartEditing | Edited String | Accept | Reject
+  | DeleteCard MouseEvent
+  | DragStart DragEvent | DragEnd DragEvent | Drop DragEvent
+  | DragIndicate Boolean DragEvent
+  | ModalOpenClicked | DoNothing
 
 type Slot id = forall query. H.Slot query Output id
 
@@ -63,20 +71,29 @@ catchEscape ev =
 
 component ::
   forall query m.
-  MonadAff m => Component query Card Output m
+  MonadAff m =>
+  MonadAsk Env m =>
+  GetLabels m =>
+  Component query Card Output m
 component =
   mkComponent
   { initialState: initialState
   , render
-  , eval : mkEval $ defaultEval { handleAction = handleAction }
+  , eval : mkEval $ defaultEval { handleAction = handleAction
+                                , initialize = Just Initialize }
   }
 
 
 initialState :: Card -> State
 initialState inp =
-  { id: inp.id, title: inp.title, labels: inp.labels
-  , edit: "", editing: false
-  , dragging: false, dragIndicate: false }
+  { id: inp.id
+  , title: inp.title
+  , labels: inp.labels
+  , edit: ""
+  , editing: false
+  , dragging: false
+  , dragIndicate: false
+  , boardLabels: [] }
 
 
 render :: forall m. State -> ComponentHTML Action () m
@@ -111,23 +128,41 @@ render s =
            , dataBsToggle "modal", dataBsTarget "#cardDetailsModal"
            , onClick (const ModalOpenClicked)]
     [text "..."]
-  -- , modalButton "cardDetailsModal" "..."
-  -- , a [ class_ CSS.cardMenu
-  --     , href "#"
-  --     , onClick DeleteCard ] [text "..."]
+  , div [ class_ CSS.labelChips ] (map onelabel s.labels)
   ]
   where inputClasses = if s.editing then [] else [CSS.hidden]
         divClasses = [CSS.cardInner] <> if s.editing then [CSS.hidden] else []
+        onelabel id =
+          case find (\l -> l.id == id) s.boardLabels of
+            Nothing -> text ""
+            Just lab ->
+              div [ class_ CSS.labelChip, style (textColourStyles lab.colour) ] [ ]
 
 
 mtype :: MediaType
 mtype = MediaType "application/json"
 
-handleAction :: forall m. MonadAff m => Action -> HalogenM State Action () Output m Unit
+handleAction ::
+  forall m.
+  MonadAff m =>
+  MonadAsk Env m =>
+  GetLabels m =>
+  Action -> HalogenM State Action () Output m Unit
 handleAction action = do
   s <- get
   case action of
     DoNothing -> pure unit
+
+    Initialize -> do
+      emitter <- asks _.labelEmitter
+      _ <- subscribe $ LabelAction <$> emitter
+      blabs <- getLabels
+      modify_ _ { boardLabels = blabs }
+
+    LabelAction (LabelsChanged labels) -> do
+      modify_ _ { boardLabels = labels }
+      newLabels <- flip intersect (map _.id labels) <$> gets _.labels
+      modify_ _ { labels = newLabels }
 
     ModalOpenClicked -> raise $ OpenCardModal $ toCard s
 

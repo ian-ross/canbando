@@ -5,18 +5,17 @@ module Canbando.Component.CardModal
 import Prelude hiding (div)
 
 import Canbando.CSS as CSS
-import Canbando.Capability.Resource.Labels (class GetLabels, LabelEvent(..), getLabels)
+import Canbando.Capability.Resource.Labels (class GetLabels, getLabels)
 import Canbando.Component.Modal (renderModal)
 import Canbando.Env (Env)
 import Canbando.Model.Card (Card)
 import Canbando.Model.Id (Id)
-import Canbando.Model.Labels (Labels)
+import Canbando.Model.Labels (LabelEvent(..), Labels)
 import Canbando.Util (dataBsDismiss, textColourStyles)
 import Control.Monad.Reader.Trans (class MonadAsk, asks)
 import Data.Array (delete, nub, snoc)
 import Data.Maybe (Maybe(..))
 import Data.Set (Set)
-import Debug.Trace (traceM)
 import Effect.Aff.Class (class MonadAff)
 import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, gets, mkComponent, mkEval, modify_, raise, subscribe)
 import Halogen as H
@@ -153,11 +152,8 @@ handleAction = case _ of
     blabs <- getLabels
     modify_ _ { boardLabels = blabs }
 
-  LabelAction LabelsReset -> do
-    blabs <- getLabels
-    modify_ _ { boardLabels = blabs }
-
-  LabelAction evt -> traceM evt
+  LabelAction (LabelsChanged labels) ->
+    modify_ _ { boardLabels = labels }
 
   AddLabel lab ->
     modifyLabels =<< nub <<< (_ `snoc` lab) <$> gets _.labels

@@ -87,6 +87,12 @@ cardMenu = ClassName "card-menu"
 cardModalLabel :: ClassName
 cardModalLabel = ClassName "card-modal-label"
 
+labelChips :: ClassName
+labelChips = ClassName "label-chips"
+
+labelChip :: ClassName
+labelChip = ClassName "label-chip"
+
 boardTile :: ClassName
 boardTile = ClassName "board-tile"
 

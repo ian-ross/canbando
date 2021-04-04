@@ -7,8 +7,11 @@ import Canbando.Capability.Store (class Store, clearStore, setItem)
 import Canbando.Model.Card (Card)
 import Canbando.Model.Id (Id)
 import Canbando.Model.List (List)
+import Data.Array (take, (!!))
+import Data.Maybe (fromJust)
 import Data.Traversable (sequence, traverse)
 import Halogen (HalogenM, lift)
+import Partial.Unsafe (unsafePartial)
 
 
 initTestStore ::
@@ -21,8 +24,8 @@ initTestStore = lift $ do
 doInitTestStore :: forall m. IdSupply m => Store m => m Unit
 doInitTestStore = do
   id <- genId 'B'
-  lists <- sequence [todo, inProgress, done]
   labels <- initLabels
+  lists <- sequence [todo labels, inProgress, done]
   setItem id { id
              , name: "Test board"
              , bgColour: "#CCCCCC"
@@ -42,11 +45,19 @@ initCard ::
   forall m. IdSupply m => Store m => Id -> String -> m Card
 initCard list title = do
   id <- genId 'C'
-  setItem id { id, title, list }
+  setItem id { id, title, list, labels: [] }
   pure { id, title, labels: [] }
 
-todo :: forall m. IdSupply m => Store m => m List
-todo = initList "To Do" ["Task #3", "Task #4", "Task #5", "Task #6", "Task #7"]
+todo :: forall m. IdSupply m => Store m => Array Id -> m List
+todo labels = do
+  lst <- initList "To Do" ["Task #3", "Task #4", "Task #5", "Task #6", "Task #7"]
+  let c1 = unsafePartial $ fromJust $ lst.cards !! 0
+  setItem c1.id c1 { labels = take 1 labels }
+  let c2 = unsafePartial $ fromJust $ lst.cards !! 1
+  setItem c2.id c2 { labels = take 2 labels }
+  let c3 = unsafePartial $ fromJust $ lst.cards !! 2
+  setItem c3.id c3 { labels = take 3 labels }
+  pure lst
 
 inProgress :: forall m. IdSupply m => Store m => m List
 inProgress = initList "In progress" ["Task #1", "Task #2"]

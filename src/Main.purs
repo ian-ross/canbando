@@ -7,13 +7,12 @@ import Canbando.Env (LogLevel(..))
 import Canbando.Router (Query(..))
 import Canbando.Router as Router
 import Canbando.Routes (route)
-import Debug.Trace (traceM)
 import Effect (Effect)
 import Effect.Aff (launchAff_)
 import Effect.Ref (new)
 import Halogen (hoist, liftEffect, mkTell)
 import Halogen.Aff as HA
-import Halogen.Subscription (create, subscribe)
+import Halogen.Subscription (create)
 import Halogen.VDom.Driver (runUI)
 import Localforage (createInstance, defaultLocalforageConfig)
 import Routing.Duplex (parse)
@@ -37,8 +36,6 @@ main = HA.runHalogenAff do
             , labels, labelEmitter: emitter, labelListener: listener }
   let root = hoist (runApp env) Router.component
   halogenIO <- runUI root unit body
-
-  sub <- liftEffect $ subscribe emitter traceM
 
   void $ liftEffect $
     nav # matchesWith (parse route) \old new ->

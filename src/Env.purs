@@ -1,7 +1,6 @@
 module Canbando.Env (Env, LogLevel(..)) where
 
-import Canbando.Capability.Resource.Labels (LabelEvent)
-import Canbando.Model.Labels (Labels)
+import Canbando.Model.Labels (LabelEvent, Labels)
 import Effect.Ref (Ref)
 import Halogen.Subscription (Emitter, Listener)
 import Localforage (Localforage)

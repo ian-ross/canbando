@@ -23,9 +23,10 @@ import Prelude
 
 import Canbando.Capability.IdSupply (class IdSupply, genId, mkId)
 import Canbando.Capability.Navigate (class Navigate)
-import Canbando.Capability.Resource.Labels (class EditLabels, class GetLabels, class SetLabels, LabelEvent(..))
+import Canbando.Capability.Resource.Labels (class EditLabels, class GetLabels, class SetLabels)
 import Canbando.Capability.Store (class Store, getItem, setItem)
 import Canbando.Env (Env)
+import Canbando.Model.Labels (LabelEvent(..), Labels)
 import Canbando.Routes (route)
 import Control.Monad.Reader.Trans (class MonadAsk, ReaderT, asks, runReaderT)
 import Data.Array (filter, snoc)
@@ -34,7 +35,6 @@ import Data.Maybe (Maybe(..))
 import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
-import Effect.Ref (modify_)
 import Effect.Ref as Ref
 import Foreign (isNull, unsafeFromForeign, unsafeToForeign)
 import Halogen (liftAff, liftEffect)
@@ -142,26 +142,36 @@ instance storeAppM :: Store AppM where
       Right v -> if isNull v then Nothing else Just (unsafeFromForeign v)
 
 
+notifyLabelChange :: Labels -> AppM Unit
+notifyLabelChange labels =
+  liftEffect <<< flip notify (LabelsChanged labels) =<< asks _.labelListener
+
+modifyLabels :: (Labels -> Labels) -> AppM Unit
+modifyLabels f = do
+  ref <- asks _.labels
+  newLabels <- liftEffect $ f <$> Ref.read ref
+  liftEffect $ Ref.write newLabels ref
+  notifyLabelChange newLabels
+
+
 instance getLabelsAppM :: GetLabels AppM where
   getLabels = liftEffect <<< Ref.read =<< asks _.labels
 
 instance setLabelsAppM :: SetLabels AppM where
   setLabels labels = do
     liftEffect <<< Ref.write labels =<< asks _.labels
-    liftEffect <<< flip notify LabelsReset =<< asks _.labelListener
+    notifyLabelChange labels
 
 instance editLabelsAppM :: EditLabels AppM where
   addLabel = do
     id <- genId 'T'
     let info = { id, name: "New label", colour: "white" }
-    liftEffect <<< modify_ (_ `snoc` info) =<< asks _.labels
+    modifyLabels (_ `snoc` info)
     pure id
-  deleteLabel id = do
-    liftEffect <<< modify_ (filter (\l -> l.id /= id)) =<< asks _.labels
-    liftEffect <<< flip notify (LabelDeleted id) =<< asks _.labelListener
-  updateLabel info = do
-    liftEffect <<< modify_ (_ `snoc` info) =<< asks _.labels
-    liftEffect <<< flip notify (LabelUpdated info) =<< asks _.labelListener
+  deleteLabel id =
+    modifyLabels (filter (\l -> l.id /= id))
+  updateLabel info =
+    modifyLabels (\labs -> filter (\l -> l.id /= info.id) labs `snoc` info)
 
 
 -- Helper function to run actions that need access to a `Localforage`

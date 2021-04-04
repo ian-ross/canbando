@@ -140,3 +140,11 @@ main > .container-fluid {
 div:focus {
   outline: none;
 }
+
+.label-chip {
+  display: inline-block;
+  margin-right: 0.25rem;
+  width: 2rem;
+  height: 0.75rem;
+  border-radius: 0.25rem;
+}
