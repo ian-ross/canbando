@@ -8,7 +8,7 @@ import Prelude hiding (div)
 import Canbando.CSS as CSS
 import Canbando.Capability.Resource.Labels (class GetLabels)
 import Canbando.Capability.Resource.List (class ManageList, addCard, deleteCard, moveCard, updateCard, updateList)
-import Canbando.Component.Card (Output(..), Slot, component) as Card
+import Canbando.Component.Card (Output(..), Query(..), Slot, component) as Card
 import Canbando.Component.Card (cardDragData)
 import Canbando.Component.Editable (EditAction, editableWith)
 import Canbando.Component.Editable as Editable
@@ -21,7 +21,7 @@ import Control.Monad.Reader.Trans (class MonadAsk)
 import Data.Array (deleteAt, filter, findIndex, insertAt)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Effect.Aff.Class (class MonadAff)
-import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, gets, lift, liftEffect, mkComponent, mkEval, modify, modify_, raise)
+import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, gets, lift, liftEffect, mkComponent, mkEval, modify, modify_, raise, tell)
 import Halogen as H
 import Halogen.HTML (button, div, h1, slot, text)
 import Halogen.HTML.Events (onClick, onDragEnter, onDragLeave, onDragOver, onDrop)
@@ -54,7 +54,8 @@ data Action
   | Delete
   | Move Direction
 
-data Query a = DeleteCard Id a
+data Query a = DeleteCard { cardId :: Id } a
+             | UpdateCard { cardId :: Id, title :: String, labels :: Array Id } a
 
 type Slot id = H.Slot Query Output id
 
@@ -203,7 +204,16 @@ handleQuery ::
   MonadAff m =>
   ManageList m =>
   Query a -> HalogenM State Action Slots Output m (Maybe a)
-handleQuery (DeleteCard cardId a) = do
+handleQuery (DeleteCard { cardId } a) = do
   lift $ deleteCard cardId
   modify_ \s -> s { cards = filter (\c -> c.id /= cardId) s.cards }
+  pure $ Just a
+handleQuery (UpdateCard { cardId, title, labels } a) = do
+  lift $ updateCard cardId { id: cardId, title, labels }
+  let update c =
+        if c.id == cardId
+        then c { title = title, labels = labels }
+        else c
+  modify_ \s -> s { cards = map update s.cards }
+  tell (Proxy :: _ "card") cardId (Card.UpdateCard { title, labels })
   pure $ Just a

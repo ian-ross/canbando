@@ -13,16 +13,15 @@ import Canbando.Model.Id (Id)
 import Canbando.Model.Labels (LabelEvent(..), Labels)
 import Canbando.Util (dataBsDismiss, textColourStyles)
 import Control.Monad.Reader.Trans (class MonadAsk, asks)
-import Data.Array (delete, nub, snoc)
+import Data.Array (delete, elem, nub, snoc)
 import Data.Maybe (Maybe(..))
-import Data.Set (Set)
 import Effect.Aff.Class (class MonadAff)
 import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, gets, mkComponent, mkEval, modify_, raise, subscribe)
 import Halogen as H
 import Halogen.HTML (button, details, div, input, p, summary, text)
 import Halogen.HTML as HH
-import Halogen.HTML.Events (onClick)
-import Halogen.HTML.Properties (ButtonType(..), InputType(..), class_, classes, for, id, style, type_, value)
+import Halogen.HTML.Events (onChecked, onClick)
+import Halogen.HTML.Properties (ButtonType(..), InputType(..), checked, class_, classes, for, id, style, type_, value)
 import Web.UIEvent.KeyboardEvent (KeyboardEvent, key)
 
 type Input = Unit
@@ -43,14 +42,14 @@ data Action = DoNothing
             | StartDelete
             | CancelDelete
             | ConfirmDelete
-            | AddLabel String
-            | RemoveLabel String
+            | LabelChecked Id Boolean
             | LabelAction LabelEvent
 
 data Query a = Show Card Id a
 
-data Output = Updated { cardId :: Id, labels :: Set String }
-            | Deleted { cardId :: Id, listId :: Id }
+data Output
+  = Updated { cardId :: Id, listId :: Id, title :: String, labels :: Array Id }
+  | Deleted { cardId :: Id, listId :: Id }
 
 type Slot = H.Slot Query Output Unit
 
@@ -123,16 +122,20 @@ render state =
              , dataBsDismiss "modal", onClick (const SaveChanges) ]
       [text "Save changes"]
     ]
-    where onelabel cardLabel label =
-            div [class_ CSS.formCheck]
-            [ input [ class_ CSS.formCheckInput
-                    , type_ InputCheckbox, value ""
-                    , id "flexCheckDefault"]
-            , HH.label [ classes [CSS.formCheckLabel, CSS.cardModalLabel]
-                       , for "flexCheckDefault"
-                       , style (textColourStyles label.colour)]
-              [text label.name]
-            ]
+    where
+      onelabel cardLabels label =
+        div [class_ CSS.formCheck]
+        [ input [ class_ CSS.formCheckInput
+                , type_ InputCheckbox
+                , value ""
+                , id ("label-check-" <> label.id)
+                , checked (label.id `elem` cardLabels)
+                , onChecked (LabelChecked label.id)]
+        , HH.label [ classes [CSS.formCheckLabel, CSS.cardModalLabel]
+                   , for ("label-check-" <> label.id)
+                   , style (textColourStyles label.colour)]
+          [text label.name]
+        ]
 
 modifyLabels :: forall m. Array Id -> HalogenM State Action () Output m Unit
 modifyLabels labs = modify_ _ { labels = labs }
@@ -155,23 +158,18 @@ handleAction = case _ of
   LabelAction (LabelsChanged labels) ->
     modify_ _ { boardLabels = labels }
 
-  AddLabel lab ->
-    modifyLabels =<< nub <<< (_ `snoc` lab) <$> gets _.labels
-
-  RemoveLabel lab ->
-    modifyLabels =<< delete lab <$> gets _.labels
+  LabelChecked id checked -> do
+    labels <- gets _.labels
+    let newLabels =
+          if checked then nub (labels `snoc` id) else delete id labels
+    modifyLabels newLabels
 
   Dismiss -> modify_ _ { deleting = false }
 
   SaveChanges -> do
-    pure unit
-    -- st <- get
-    -- for_ st.board \b -> do
-    --   let mklab { id, name, colour } = { label: name, colour }
-    --       newb = b { name = st.name, bgColour = st.bgColour
-    --                , labels = map mklab st.labels }
-    --   put $ st { board = Just newb }
-      -- raise (Updated newb)
+    s <- get
+    raise $ Updated { cardId: s.id, listId: s.listId
+                    , title: s.name, labels: s.labels }
 
   StartDelete -> modify_ _ { deleting = true }
 

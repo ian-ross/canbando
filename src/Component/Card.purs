@@ -1,5 +1,5 @@
 module Canbando.Component.Card (
-  Output(..), Slot,
+  Output(..), Slot, Query(..),
   component, cardDragData
 ) where
 
@@ -58,7 +58,10 @@ data Action
   | DragIndicate Boolean DragEvent
   | ModalOpenClicked | DoNothing
 
-type Slot id = forall query. H.Slot query Output id
+data Query a =
+  UpdateCard { title :: String, labels :: Array Id } a
+
+type Slot id = H.Slot Query Output id
 
 catchEnter :: KeyboardEvent -> Action
 catchEnter ev =
@@ -70,16 +73,17 @@ catchEscape ev =
 
 
 component ::
-  forall query m.
+  forall m.
   MonadAff m =>
   MonadAsk Env m =>
   GetLabels m =>
-  Component query Card Output m
+  Component Query Card Output m
 component =
   mkComponent
   { initialState: initialState
   , render
   , eval : mkEval $ defaultEval { handleAction = handleAction
+                                , handleQuery = handleQuery
                                 , initialize = Just Initialize }
   }
 
@@ -212,3 +216,12 @@ decodeDragData = hush <<< (parseJson >=> decodeJson)
 
 cardDragData :: DragEvent -> Effect (Maybe Card)
 cardDragData ev = decodeDragData <$> getData mtype (dataTransfer ev)
+
+
+handleQuery ::
+  forall m a.
+  MonadAff m =>
+  Query a -> HalogenM State Action () Output m (Maybe a)
+handleQuery (UpdateCard { title, labels } a) = do
+  modify_ _ { title = title, labels = labels }
+  pure $ Just a

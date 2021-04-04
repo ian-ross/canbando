@@ -155,9 +155,10 @@ handleAction = case _ of
     navigate Home
 
   CardModalAction (CardModal.Deleted { cardId, listId }) ->
-    tell (Proxy :: _ "list") listId (List.DeleteCard cardId)
+    tell (Proxy :: _ "list") listId (List.DeleteCard { cardId })
 
-  CardModalAction (CardModal.Updated { cardId, labels }) -> pure unit
+  CardModalAction (CardModal.Updated { cardId, listId, title, labels }) ->
+    tell (Proxy :: _ "list") listId (List.UpdateCard { cardId, title, labels })
 
 
 deleteListFromBoard :: Id -> Board -> Board
@@ -177,10 +178,8 @@ doMove id dir = do
         let len = length st.lists
             newIdx /\ delta =
               case dir of
-                List.Left ->
-                  (idx - 1 `max` 0) /\ (-1)
-                List.Right ->
-                  (idx + 1 `min` len) /\ 1
+                List.Left ->  (idx - 1 `max` 0  ) /\ (-1)
+                List.Right -> (idx + 1 `min` len) /\ 1
         if delta == -1 && idx == 0 || delta == 1 && idx == len
           then pure unit
           else do
