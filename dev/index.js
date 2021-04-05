@@ -1,2 +1,2 @@
 require("./main.css");
-require("../output/Main/index.js").main();
+require("../output/Main").main();

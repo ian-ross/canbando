@@ -1,0 +1,152 @@
+body {
+  background-color: #ccc;
+}
+
+body > div {
+  height: 100%;
+}
+
+main {
+  height: 100%;
+}
+
+main > .container-fluid {
+  padding: 72px 15px 0;
+  overflow: auto;
+}
+
+.avatar {
+  position: relative;
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0;
+  margin-left: 15px;
+  padding: 0;
+  text-align: center;
+  text-transform: uppercase;
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  &.img-thumbnail {
+    padding: 4px;
+    max-width: none;
+  }
+  max-height: 32px;
+  width: 32px;
+  font-size: 20px;
+  line-height: 32px;
+}
+
+.list-wrapper {
+  position: relative;
+  width: 300px;
+  margin-right: 20px;
+}
+
+.list-wrapper h1 {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.add-new-list {
+  width: 300px;
+}
+
+.add-new-board {
+  width: 250px;
+  height: 60px;
+  margin-left: 30px;
+  margin-top: 10px;
+  margin-bottom: 20px;
+  padding: 8px;
+}
+
+.list-card {
+  position: relative;
+  margin-bottom: 10px;
+  border-radius: 0;
+  padding: 8px;
+}
+
+.board-tile {
+  position: relative;
+  width: 250px;
+  height: 150px;
+  margin: 20px;
+  padding: 8px;
+}
+
+.tile-inner {
+  padding: 10px;
+  font-weight: bold;
+  font-size: 24px;
+}
+
+.card-dragging {
+  opacity: 0.2;
+}
+
+.card-drag-indicate {
+  background: white;
+  background: linear-gradient(grey 0%, transparent 25%, transparent 100%);
+}
+
+.card-menu {
+  font-family: monospace;
+  position: absolute;
+  right: 8px;
+  top: 0px;
+  border: 0px;
+  background-color: transparent;
+  font-weight: bold;
+  text-decoration: none;
+  color: #555;
+}
+
+.card-modal-label {
+  padding: 0px 4px;
+  border-radius: 4px;
+  border: 1px solid black;
+}
+
+.list-menu {
+  font-family: monospace;
+  position: absolute;
+  right: 15px;
+  top: 20px;
+  font-weight: bold;
+  text-decoration: none;
+  color: #555;
+}
+
+.add-new-card,.add-new-list {
+  border: none;
+  text-align: left;
+}
+.add-new-card:hover,.add-new-list:hover {
+  background-color: #888;
+  border: none;
+}
+
+.icon {
+  position: relative;
+  top: -1px;
+  left: 0px;
+  padding-right: 5px;
+}
+
+div:focus {
+  outline: none;
+}
+
+.label-chip {
+  display: inline-block;
+  margin-right: 0.25rem;
+  width: 2rem;
+  height: 0.75rem;
+  border-radius: 0.25rem;
+  border: 1px solid black;
+}

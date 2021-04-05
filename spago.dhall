@@ -8,6 +8,7 @@
   , "effect"
   , "halogen"
   , "halogen-subscriptions"
+  , "httpure"
   , "localforage"
   , "psci-support"
   , "remotedata"

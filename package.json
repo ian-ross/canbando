@@ -1,17 +1,34 @@
 {
-  "private": true,
-  "devDependencies": {
-    "purescript": "^0.14.0",
-    "spago": "^0.19.1"
-  },
+  "name": "canbando",
+  "description": "The can-do Kanban board: a pedagogical PureScript project",
+  "author": "Ian Ross",
+  "license": "MIT",
   "scripts": {
+    "postinstall": "spago install",
+    "clean": "rm -rf node_modules output dce-output .spago dist/* *.lock .cache",
     "build": "spago build",
-    "serve": "parcel dev/index.html --open",
-    "build-prod": "mkdir -p prod && cp dev/index.html prod/ && rm -rf dist && spago bundle-app --to prod/index.js && parcel build prod/index.html"
+    "watch": "spago build --watch",
+    "test": "spago test",
+    "serve-dev": "parcel dev/index.html --open",
+    "bundle:build": "spago build --purs-args '--codegen corefn'",
+    "bundle:dce": "zephyr -f Main.main",
+    "bundle:parcel": "parcel build assets/index.html --public-url '.' --no-source-maps",
+    "bundle": "npm run bundle:build && npm run bundle:dce && npm run bundle:parcel",
+    "serve": "http-server dist",
+    "run-server": "spago run --main Server.Main"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ian-ross/canbando.git"
   },
   "dependencies": {
-    "parcel": "1.12.3",
     "big-integer": "^1.6.48",
-    "localforage": "^1.9.0"
+    "localforage": "^1.9.0",
+  },
+  "devDependencies": {
+    "http-server": "^0.12.3",
+    "parcel": "1.12.3",
+    "purescript": "^0.14.0",
+    "spago": "^0.19.1"
   }
 }

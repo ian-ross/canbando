@@ -8,6 +8,7 @@ node_modules
 # Generated files
 .psci
 output
+dce-output
 generated-docs
 .psc-package
 .psc*
