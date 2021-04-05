@@ -14,7 +14,7 @@ import Canbando.Model.Id (Id)
 import Canbando.Model.Labels (LabelEvent(..), Labels)
 import Canbando.Util (dataBsDismiss, textColourStyles)
 import Control.Monad.Reader.Trans (class MonadAsk, asks)
-import Data.Array (delete, elem, mapWithIndex, modifyAt, nub, snoc)
+import Data.Array (delete, deleteAt, elem, mapWithIndex, modifyAt, nub, snoc)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Effect.Aff.Class (class MonadAff)
 import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, gets, mkComponent, mkEval, modify_, raise, subscribe)
@@ -50,6 +50,7 @@ data Action = DoNothing
             | AddChecklist
             | ChecklistChecked Int Boolean
             | ChecklistItemEdit Int Editable.Output
+            | ChecklistItemDelete Int
 
 data Query a = Show Card Id a
 
@@ -164,8 +165,8 @@ render state =
                   , extraInputClasses: []
                   , headElement: div }
         in
-         div [class_ CSS.formCheck]
-         [ input [ class_ CSS.formCheckInput
+         div [classes [CSS.formCheck, CSS.dFlex]]
+         [ input [ classes [CSS.formCheckInput, CSS.me2]
                  , type_ InputCheckbox
                  , value ""
                  , id ("checklist-check-" <> show idx)
@@ -173,6 +174,9 @@ render state =
                  , onChecked (ChecklistChecked idx)]
          , slot (Proxy :: _ "checklist") inp.id
            Editable.component inp (ChecklistItemEdit idx)
+         , button [ type_ ButtonButton
+                  , classes [CSS.btnClose, CSS.msAuto, CSS.mt2]
+                  , onClick (const $ ChecklistItemDelete idx) ] []
         ]
 
 modifyLabels :: forall m. Array Id -> HalogenM State Action Slots Output m Unit
@@ -218,6 +222,9 @@ handleAction = case _ of
 
   ChecklistItemEdit idx (Editable.Edited newValue) ->
     modifyCheckList idx _ { name = newValue }
+
+  ChecklistItemDelete idx ->
+    modify_ \s -> s { checklist = fromMaybe s.checklist $ deleteAt idx s.checklist }
 
   Dismiss -> modify_ _ { deleting = false }
 

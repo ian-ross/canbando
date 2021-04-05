@@ -165,6 +165,9 @@ msAuto = ClassName "ms-auto"
 ms2 :: ClassName
 ms2 = ClassName "ms-2"
 
+me2 :: ClassName
+me2 = ClassName "me-2"
+
 mt2 :: ClassName
 mt2 = ClassName "mt-2"
 
