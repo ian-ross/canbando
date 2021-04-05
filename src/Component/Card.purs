@@ -7,6 +7,7 @@ import Prelude hiding (div)
 
 import Canbando.CSS as CSS
 import Canbando.Capability.Resource.Labels (class GetLabels, getLabels)
+import Canbando.Component.Icon (icon)
 import Canbando.Env (Env)
 import Canbando.Model.Card (Card, CardRep, toCard)
 import Canbando.Model.Id (Id)
@@ -14,7 +15,7 @@ import Canbando.Model.Labels (LabelEvent(..), Labels)
 import Canbando.Util (dataBsTarget, dataBsToggle, focusElement, textColourStyles)
 import Control.Monad.Reader.Trans (class MonadAsk, asks)
 import Data.Argonaut (decodeJson, encodeJson, parseJson, stringify)
-import Data.Array (find, intersect)
+import Data.Array (filter, find, intersect, length, null)
 import Data.Either (hush)
 import Data.Maybe (Maybe(..))
 import Data.MediaType (MediaType(..))
@@ -22,7 +23,7 @@ import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
 import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, gets, liftEffect, mkComponent, mkEval, modify, modify_, raise, subscribe)
 import Halogen as H
-import Halogen.HTML (button, div, input, text)
+import Halogen.HTML (button, div, div_, input, span, span_, text)
 import Halogen.HTML.Events (onBlur, onClick, onDragEnd, onDragEnter, onDragLeave, onDragOver, onDragStart, onDrop, onKeyDown, onKeyUp, onValueChange)
 import Halogen.HTML.Properties (ButtonType(..), class_, classes, draggable, id, style, tabIndex, type_, value)
 import Web.Event.Event (preventDefault, stopPropagation)
@@ -127,7 +128,7 @@ render s =
           -- , onFocus (const StartEditing)
           , onBlur $ const (if s.editing then Accept else DoNothing)
           , value s.edit ]
-  , div [ classes divClasses ] [text s.title]
+  , div [ classes divClasses ] $ [text s.title] <> checklist
   , button [ type_ ButtonButton, tabIndex (-1)
            , classes [CSS.cardMenu, CSS.btnLink, CSS.btnSm]
            , dataBsToggle "modal", dataBsTarget "#cardDetailsModal"
@@ -142,6 +143,13 @@ render s =
             Nothing -> text ""
             Just lab ->
               div [ class_ CSS.labelChip, style (textColourStyles lab.colour) ] [ ]
+        checklist =
+          if null s.checklist
+          then []
+          else [span [class_ CSS.ms2]
+                [ icon "bi-check2-square"
+                , text $ show (length (filter _.done s.checklist)) <>
+                  "/" <> show (length s.checklist)]]
 
 
 mtype :: MediaType
