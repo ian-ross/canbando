@@ -6,6 +6,7 @@ import Prelude hiding (div)
 
 import Canbando.CSS as CSS
 import Canbando.Capability.Resource.Labels (class GetLabels, getLabels)
+import Canbando.Component.Editable as Editable
 import Canbando.Component.Modal (renderModal)
 import Canbando.Env (Env)
 import Canbando.Model.Card (Card, CheckListItem)
@@ -13,15 +14,16 @@ import Canbando.Model.Id (Id)
 import Canbando.Model.Labels (LabelEvent(..), Labels)
 import Canbando.Util (dataBsDismiss, textColourStyles)
 import Control.Monad.Reader.Trans (class MonadAsk, asks)
-import Data.Array (delete, elem, mapWithIndex, nub, snoc)
-import Data.Maybe (Maybe(..))
+import Data.Array (delete, elem, mapWithIndex, modifyAt, nub, snoc)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Effect.Aff.Class (class MonadAff)
 import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, gets, mkComponent, mkEval, modify_, raise, subscribe)
 import Halogen as H
-import Halogen.HTML (button, details, div, input, p, summary, text)
+import Halogen.HTML (button, details, div, input, p, slot, summary, text)
 import Halogen.HTML as HH
 import Halogen.HTML.Events (onChecked, onClick)
 import Halogen.HTML.Properties (ButtonType(..), InputType(..), checked, class_, classes, for, id, style, type_, value)
+import Type.Proxy (Proxy(..))
 import Web.UIEvent.KeyboardEvent (KeyboardEvent, key)
 
 type Input = Unit
@@ -47,6 +49,7 @@ data Action = DoNothing
             | LabelAction LabelEvent
             | AddChecklist
             | ChecklistChecked Int Boolean
+            | ChecklistItemEdit Int Editable.Output
 
 data Query a = Show Card Id a
 
@@ -59,6 +62,8 @@ data Output
   | Deleted { cardId :: Id, listId :: Id }
 
 type Slot = H.Slot Query Output Unit
+
+type Slots = ( checklist :: Editable.Slot String )
 
 
 initialState :: State
@@ -94,7 +99,7 @@ catchEnter ev =
 render ::
   forall m.
   MonadAff m =>
-  State -> ComponentHTML Action () m
+  State -> ComponentHTML Action Slots m
 render state =
   renderModal
     "cardDetailsModal" "cardDetailsModalLabel" state.name
@@ -148,37 +153,45 @@ render state =
                 , id ("label-check-" <> label.id)
                 , checked (label.id `elem` cardLabels)
                 , onChecked (LabelChecked label.id)]
-          -- STOPPED HERE: REPLACE THE FOLLOWING WITH AN Editable?
-          -- NEED AN ACTION TO WRAP THE Editable ACTIONS WITH AN
-          -- INTEGER INDEX, AND ALSO AN ARRAY OF STATE VALUES TO USE
-          -- FOR THE Editables.
         , HH.label [ classes [CSS.formCheckLabel, CSS.cardModalLabel]
                    , for ("label-check-" <> label.id)
                    , style (textColourStyles label.colour)]
           [text label.name]
         ]
       onecheck idx { name, done } =
-        div [class_ CSS.formCheck]
-        [ input [ class_ CSS.formCheckInput
-                , type_ InputCheckbox
-                , value ""
-                , id ("checklist-check-" <> show idx)
-                , checked done
-                , onChecked (ChecklistChecked idx)]
-        , HH.label [ classes [CSS.formCheckLabel]
-                   , for ("checklist-check-" <> show idx) ]
-          [text name]
+        let inp = { id: "checklist-edit-" <> show idx
+                  , name: name
+                  , extraInputClasses: []
+                  , headElement: div }
+        in
+         div [class_ CSS.formCheck]
+         [ input [ class_ CSS.formCheckInput
+                 , type_ InputCheckbox
+                 , value ""
+                 , id ("checklist-check-" <> show idx)
+                 , checked done
+                 , onChecked (ChecklistChecked idx)]
+         , slot (Proxy :: _ "checklist") inp.id
+           Editable.component inp (ChecklistItemEdit idx)
         ]
 
-modifyLabels :: forall m. Array Id -> HalogenM State Action () Output m Unit
+modifyLabels :: forall m. Array Id -> HalogenM State Action Slots Output m Unit
 modifyLabels labs = modify_ _ { labels = labs }
+
+modifyCheckList ::
+  forall m.
+  Int -> (CheckListItem -> CheckListItem) ->
+  HalogenM State Action Slots Output m Unit
+modifyCheckList idx upd =
+  modify_ \st -> st { checklist = fromMaybe st.checklist $
+                                  modifyAt idx upd st.checklist }
 
 handleAction ::
   forall m.
   MonadAff m =>
   MonadAsk Env m =>
   GetLabels m =>
-  Action -> HalogenM State Action () Output m Unit
+  Action -> HalogenM State Action Slots Output m Unit
 handleAction = case _ of
   DoNothing -> pure unit
 
@@ -197,9 +210,14 @@ handleAction = case _ of
           if checked then nub (labels `snoc` id) else delete id labels
     modifyLabels newLabels
 
-  AddChecklist -> pure unit
+  AddChecklist ->
+    modify_ \s -> s { checklist = s.checklist `snoc` { name: "New todo", done: false } }
 
-  ChecklistChecked idx checked -> pure unit
+  ChecklistChecked idx checked ->
+    modifyCheckList idx _ { done = checked }
+
+  ChecklistItemEdit idx (Editable.Edited newValue) ->
+    modifyCheckList idx _ { name = newValue }
 
   Dismiss -> modify_ _ { deleting = false }
 
@@ -220,8 +238,8 @@ handleAction = case _ of
 
 handleQuery ::
   forall m a.
-  Query a -> HalogenM State Action () Output m (Maybe a)
+  Query a -> HalogenM State Action Slots Output m (Maybe a)
 handleQuery (Show card listId a) = do
-  modify_ \s -> s { id = card.id, listId = listId,
-                    name = card.title, labels = card.labels }
+  modify_ \s -> s { id = card.id, listId = listId, name = card.title
+                  , labels = card.labels, checklist = card.checklist }
   pure $ Just a

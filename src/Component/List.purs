@@ -10,7 +10,6 @@ import Canbando.Capability.Resource.Labels (class GetLabels)
 import Canbando.Capability.Resource.List (class ManageList, addCard, deleteCard, moveCard, updateCard, updateList)
 import Canbando.Component.Card (Output(..), Query(..), Slot, component) as Card
 import Canbando.Component.Card (cardDragData)
-import Canbando.Component.Editable (EditAction, editableWith)
 import Canbando.Component.Editable as Editable
 import Canbando.Component.Icon (icon, iconButton)
 import Canbando.Env (Env)
@@ -48,7 +47,7 @@ data Direction = Left | Right
 data Action
   = AddCard
   | CardAction Card.Output
-  | Editing (Maybe EditAction)
+  | Edited Editable.Output
   | DragOver DragEvent
   | Drop DragEvent
   | Delete
@@ -63,10 +62,8 @@ data Query a
 
 type Slot id = H.Slot Query Output id
 
-type Slots = ( card :: Card.Slot Id )
-
-_card :: Proxy "card"
-_card = Proxy
+type Slots = ( card :: Card.Slot Id
+             , editable :: Editable.Slot Unit )
 
 
 component ::
@@ -109,13 +106,17 @@ render s =
    , text " "
    , iconButton "bi-x-circle" (const Delete)
    ],
-   editableWith [CSS.formControlLG] h1 Editing s,
+   slot (Proxy :: _ "editable") unit Editable.component editableInput Edited,
    div [classes [CSS.dFlex, CSS.flexColumn]] cards,
    button [classes [CSS.rounded, CSS.addNewCard], onClick (const AddCard)]
      [ icon "bi-plus-circle", text "Add new card"]
    ]
   where cards = map onecard s.cards
-        onecard crd = slot _card crd.id Card.component crd CardAction
+        onecard crd = slot (Proxy :: _ "card") crd.id Card.component crd CardAction
+        editableInput = { id: "list-name-" <> s.id
+                        , name: s.name
+                        , extraInputClasses: [CSS.formControlLG]
+                        , headElement: h1 }
 
 
 handleAction ::
@@ -130,15 +131,9 @@ handleAction action =
         Nothing -> pure unit
         Just card -> modify_ \s -> s { cards = s.cards <> [card] }
 
-    Editing Nothing -> pure unit
-
-    Editing (Just editAction) -> do
-      Editable.handleAction editAction >>= case _ of
-        Just s -> do
-          lst <- modify \st -> st { name = s }
-          lift $ updateList lst.id (toList lst)
-          pure unit
-        _ -> pure unit
+    Edited (Editable.Edited newValue) -> do
+      lst <- modify \st -> st { name = newValue }
+      lift $ updateList lst.id (toList lst)
 
     Delete -> raise =<< ListDeleted <$> gets _.id
 
@@ -219,5 +214,5 @@ handleQuery (UpdateCard { cardId, title, labels, checklist } a) = do
         then c { title = title, labels = labels }
         else c
   modify_ \s -> s { cards = map update s.cards }
-  tell (Proxy :: _ "card") cardId (Card.UpdateCard { title, labels })
+  tell (Proxy :: _ "card") cardId (Card.UpdateCard { title, labels, checklist })
   pure $ Just a

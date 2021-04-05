@@ -9,7 +9,7 @@ import Canbando.CSS as CSS
 import Canbando.Capability.Resource.Labels (class GetLabels, getLabels)
 import Canbando.Component.Icon (icon)
 import Canbando.Env (Env)
-import Canbando.Model.Card (Card, CardRep, toCard)
+import Canbando.Model.Card (Card, CardRep, CheckListItem, toCard)
 import Canbando.Model.Id (Id)
 import Canbando.Model.Labels (LabelEvent(..), Labels)
 import Canbando.Util (dataBsTarget, dataBsToggle, focusElement, textColourStyles)
@@ -23,7 +23,7 @@ import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
 import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, gets, liftEffect, mkComponent, mkEval, modify, modify_, raise, subscribe)
 import Halogen as H
-import Halogen.HTML (button, div, div_, input, span, span_, text)
+import Halogen.HTML (button, div, input, span, text)
 import Halogen.HTML.Events (onBlur, onClick, onDragEnd, onDragEnter, onDragLeave, onDragOver, onDragStart, onDrop, onKeyDown, onKeyUp, onValueChange)
 import Halogen.HTML.Properties (ButtonType(..), class_, classes, draggable, id, style, tabIndex, type_, value)
 import Web.Event.Event (preventDefault, stopPropagation)
@@ -60,7 +60,9 @@ data Action
   | ModalOpenClicked | DoNothing
 
 data Query a =
-  UpdateCard { title :: String, labels :: Array Id } a
+  UpdateCard { title :: String
+             , labels :: Array Id
+             , checklist :: Array CheckListItem } a
 
 type Slot id = H.Slot Query Output id
 
@@ -81,7 +83,7 @@ component ::
   Component Query Card Output m
 component =
   mkComponent
-  { initialState: initialState
+  { initialState
   , render
   , eval : mkEval $ defaultEval { handleAction = handleAction
                                 , handleQuery = handleQuery
@@ -233,6 +235,6 @@ handleQuery ::
   forall m a.
   MonadAff m =>
   Query a -> HalogenM State Action () Output m (Maybe a)
-handleQuery (UpdateCard { title, labels } a) = do
-  modify_ _ { title = title, labels = labels }
+handleQuery (UpdateCard { title, labels, checklist } a) = do
+  modify_ _ { title = title, labels = labels, checklist = checklist }
   pure $ Just a
