@@ -13,7 +13,7 @@ import Canbando.Model.Id (Id)
 import Canbando.Model.Labels (LabelEvent(..), Labels)
 import Canbando.Util (dataBsDismiss, textColourStyles)
 import Control.Monad.Reader.Trans (class MonadAsk, asks)
-import Data.Array (delete, elem, nub, snoc)
+import Data.Array (delete, elem, mapWithIndex, nub, snoc)
 import Data.Maybe (Maybe(..))
 import Effect.Aff.Class (class MonadAff)
 import Halogen (Component, ComponentHTML, HalogenM, defaultEval, get, gets, mkComponent, mkEval, modify_, raise, subscribe)
@@ -45,6 +45,8 @@ data Action = DoNothing
             | ConfirmDelete
             | LabelChecked Id Boolean
             | LabelAction LabelEvent
+            | AddChecklist
+            | ChecklistChecked Int Boolean
 
 data Query a = Show Card Id a
 
@@ -102,6 +104,15 @@ render state =
         [ summary [class_ CSS.formLabel] [text "Labels"] ]
         <> map (onelabel state.labels) state.boardLabels
       ]
+    , div [class_ CSS.mb3]
+      [ details [] $
+        [ summary [class_ CSS.formLabel] [text "Checklist"] ]
+        <> mapWithIndex onecheck state.checklist <>
+        [ button [ classes [CSS.btn, CSS.btnSecondary, CSS.btnSm]
+                 , onClick (const AddChecklist) ]
+          [text "Add checklist item..."]
+        ]
+      ]
     , div [ classes [CSS.card, CSS.textDanger, CSS.mb3] ]
       [ div [classes [CSS.cardHeader]] [text "DANGER!"]
       , div [class_ CSS.cardBody]
@@ -137,10 +148,26 @@ render state =
                 , id ("label-check-" <> label.id)
                 , checked (label.id `elem` cardLabels)
                 , onChecked (LabelChecked label.id)]
+          -- STOPPED HERE: REPLACE THE FOLLOWING WITH AN Editable?
+          -- NEED AN ACTION TO WRAP THE Editable ACTIONS WITH AN
+          -- INTEGER INDEX, AND ALSO AN ARRAY OF STATE VALUES TO USE
+          -- FOR THE Editables.
         , HH.label [ classes [CSS.formCheckLabel, CSS.cardModalLabel]
                    , for ("label-check-" <> label.id)
                    , style (textColourStyles label.colour)]
           [text label.name]
+        ]
+      onecheck idx { name, done } =
+        div [class_ CSS.formCheck]
+        [ input [ class_ CSS.formCheckInput
+                , type_ InputCheckbox
+                , value ""
+                , id ("checklist-check-" <> show idx)
+                , checked done
+                , onChecked (ChecklistChecked idx)]
+        , HH.label [ classes [CSS.formCheckLabel]
+                   , for ("checklist-check-" <> show idx) ]
+          [text name]
         ]
 
 modifyLabels :: forall m. Array Id -> HalogenM State Action () Output m Unit
@@ -169,6 +196,10 @@ handleAction = case _ of
     let newLabels =
           if checked then nub (labels `snoc` id) else delete id labels
     modifyLabels newLabels
+
+  AddChecklist -> pure unit
+
+  ChecklistChecked idx checked -> pure unit
 
   Dismiss -> modify_ _ { deleting = false }
 

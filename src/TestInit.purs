@@ -4,12 +4,12 @@ import Prelude
 
 import Canbando.Capability.IdSupply (class IdSupply, genId)
 import Canbando.Capability.Store (class Store, clearStore, getItem, setItem)
-import Canbando.Model.Card (Card)
+import Canbando.Model.Card (Card, CheckListItem)
 import Canbando.Model.Id (Id)
 import Canbando.Model.List (List)
-import Data.Array (take, (!!))
+import Data.Array (take, zipWithA, (!!))
 import Data.Maybe (fromJust)
-import Data.Traversable (sequence, traverse)
+import Data.Traversable (sequence)
 import Halogen (HalogenM, lift)
 import Partial.Unsafe (unsafePartial)
 
@@ -34,23 +34,37 @@ doInitTestStore = do
   setItem "root" [id]
 
 initList ::
-  forall m. IdSupply m => Store m => String -> Array String -> m List
-initList name cardNames = do
+  forall m. IdSupply m => Store m =>
+  String -> Array String -> Array (Array CheckListItem) -> m List
+initList name cardNames checklists = do
   id <- genId 'L'
-  cards <- traverse (initCard id) cardNames
+  cards <- zipWithA (initCard id) cardNames checklists
   setItem id { id, name, cards: map _.id cards }
   pure { id, name, cards }
 
 initCard ::
-  forall m. IdSupply m => Store m => Id -> String -> m Card
-initCard list title = do
+  forall m. IdSupply m => Store m =>
+  Id -> String -> Array CheckListItem -> m Card
+initCard list title checklist = do
   id <- genId 'C'
-  setItem id { id, title, list, labels: [], checklist: [] }
-  pure { id, title, labels: [], checklist: [] }
+  setItem id { id, title, list, labels: [], checklist: checklist }
+  pure { id, title, labels: [], checklist: checklist }
 
 todo :: forall m. IdSupply m => Store m => Array Id -> m List
 todo labels = do
-  lst <- initList "To Do" ["Task #3", "Task #4", "Task #5", "Task #6", "Task #7"]
+  let checklists =
+        [ []
+        , [ { name: "Todo #4.1", done: true }
+          , { name: "Todo #4.2", done: true }
+          , { name: "Todo #4.3", done: false }
+          , { name: "Todo #4.4", done: false }
+          , { name: "Todo #4.5", done: false } ]
+        , []
+        , [ { name: "Todo #6.1", done: false }
+          , { name: "Todo #6.2", done: false }
+          , { name: "Todo #6.3", done: false } ]
+        , [] ]
+  lst <- initList "To Do" ["Task #3", "Task #4", "Task #5", "Task #6", "Task #7"] checklists
   let process :: Int -> Int -> m Unit
       process idx nlabels = do
         let cint = unsafePartial $ fromJust $ lst.cards !! idx
@@ -63,10 +77,10 @@ todo labels = do
   pure lst
 
 inProgress :: forall m. IdSupply m => Store m => m List
-inProgress = initList "In progress" ["Task #1", "Task #2"]
+inProgress = initList "In progress" ["Task #1", "Task #2"] [ [], [] ]
 
 done :: forall m. IdSupply m => Store m => m List
-done = initList "Done" []
+done = initList "Done" [] []
 
 initLabels :: forall m. IdSupply m => Store m => m (Array Id)
 initLabels = do
