@@ -1,8 +1,10 @@
 module Canbando.Model.Board
-  ( BoardInfo, BareBoardInfo, BoardLists, BoardRep, Labels, Board, BoardStore
+  ( BoardInfo, BoardCreateInfo, Board, BoardStore
+  , BoardCreateInfoRep, BoardInfoRep, LabelsRep, BoardListsRep
+  , FullBoardRep, BoardRep
   , toBoard, toBoardStore
   , addListToBoard
-  , bareBoardCodec
+  , boardInfoCodec, boardCreateInfoCodec
   ) where
 
 import Prelude
@@ -17,37 +19,48 @@ import Data.Codec.Argonaut.Record as CAR
 import Type.Row (type (+))
 
 
--- type BoardInfoOld label row =
---   ( id :: Id
---   , name :: String
---   , bgColour :: String
---   , labels :: Array label
---   | row )
-
-type BoardInfo row =
-  ( id :: Id
-  , name :: String
+-- Basic board information needed for board creation.
+type BoardCreateInfoRep row =
+  ( name :: String
   , bgColour :: String
   | row )
 
-type Labels label row =
+-- Basic board information.
+type BoardInfoRep row =
+  BoardCreateInfoRep + (id :: Id | row)
+
+-- Board labels.
+type LabelsRep label row =
   ( labels :: Array label
   | row )
 
-type BareBoardInfo = { | BoardInfo () }
-
-type BoardLists listrep row =
+-- Lists in board.
+type BoardListsRep listrep row =
   ( lists :: Array listrep
   | row )
 
-type BoardRep label listrep row =
-  { | BoardInfo + Labels label + BoardLists listrep row }
+-- Board with labels and lists.
+type FullBoardRep label listrep row =
+  { | BoardInfoRep + LabelsRep label + BoardListsRep listrep row }
 
-type Board = BoardRep LabelInfo List ()
+-- Board with labels and lists and possible extra data.
+type BoardRep row = FullBoardRep LabelInfo List row
 
-type BoardStore = BoardRep Id Id ()
 
-toBoard :: forall row. BoardRep LabelInfo List row -> Board
+-- Concrete basic information needed for board creation.
+type BoardCreateInfo = { | BoardCreateInfoRep () }
+
+-- Concrete basic board information.
+type BoardInfo = { | BoardInfoRep () }
+
+-- Concrete full board with labels and lists.
+type Board = BoardRep ()
+
+-- Concrete full board with labels and lists as IDs only.
+type BoardStore = FullBoardRep Id Id ()
+
+
+toBoard :: forall row. FullBoardRep LabelInfo List row -> Board
 toBoard brd =
   { id: brd.id
   , name: brd.name
@@ -55,7 +68,7 @@ toBoard brd =
   , labels: brd.labels
   , lists: brd.lists }
 
-toBoardStore :: forall row. BoardRep LabelInfo List row -> BoardStore
+toBoardStore :: forall row. BoardRep row -> BoardStore
 toBoardStore brd =
   { id: brd.id
   , name: brd.name
@@ -64,12 +77,19 @@ toBoardStore brd =
   , lists: map _.id brd.lists }
 
 addListToBoard ::
-  forall label list row. list -> BoardRep label list row -> BoardRep label list row
+  forall label list row. list -> FullBoardRep label list row -> FullBoardRep label list row
 addListToBoard list brd = brd { lists = brd.lists `snoc` list }
 
-bareBoardCodec :: JsonCodec BareBoardInfo
-bareBoardCodec =
-  CAR.object "BareBoardInfo"
+boardCreateInfoCodec :: JsonCodec BoardCreateInfo
+boardCreateInfoCodec =
+  CAR.object "BoardCreateInfo"
+    { name: CA.string
+    , bgColour: CA.string
+    }
+
+boardInfoCodec :: JsonCodec BoardInfo
+boardInfoCodec =
+  CAR.object "BoardInfo"
     { id: CA.string
     , name: CA.string
     , bgColour: CA.string

@@ -5,7 +5,8 @@ module Server.Handler.List
 import Prelude
 
 import Data.Maybe (Maybe)
-import HTTPure (ResponseM, ok)
+import HTTPure (ok)
+import Server.Env (ResponseM)
 import Server.Util (Detail)
 
 

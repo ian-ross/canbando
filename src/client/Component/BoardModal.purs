@@ -1,5 +1,5 @@
 module Canbando.Component.BoardModal
-  ( BareBoardInfo, Output(..), Slot, Query(..), component
+  ( BoardInfoWithLabels, Output(..), Slot, Query(..), component
   ) where
 
 import Prelude hiding (div)
@@ -9,7 +9,7 @@ import Canbando.Capability.IdSupply (class IdSupply, genId)
 import Canbando.Capability.Resource.Labels (class EditLabels, deleteLabel, updateLabel)
 import Canbando.Component.LabelEdit as Label
 import Canbando.Component.Modal (renderModal)
-import Canbando.Model.Board (Board, BoardInfo, Labels)
+import Canbando.Model.Board (Board, BoardInfoRep, BoardRep, LabelsRep)
 import Canbando.Model.Id (Id)
 import Canbando.Model.Labels (LabelInfo)
 import Canbando.Util (dataBsDismiss)
@@ -28,14 +28,14 @@ import Web.HTML.HTMLInputElement (fromHTMLElement, setValue)
 import Web.UIEvent.KeyboardEvent (KeyboardEvent, key)
 
 
-type BareBoardInfo = { | BoardInfo + Labels LabelInfo () }
+type BoardInfoWithLabels = { | BoardInfoRep + LabelsRep LabelInfo () }
 
-toBareBoardInfo :: forall row. { | BoardInfo + Labels LabelInfo row } -> BareBoardInfo
+toBareBoardInfo :: forall row. BoardRep row -> BoardInfoWithLabels
 toBareBoardInfo { id, name, bgColour, labels } = { id, name, bgColour, labels }
 
 type State =
   { visible :: Boolean
-  , board :: Maybe BareBoardInfo
+  , board :: Maybe BoardInfoWithLabels
   , name :: String
   , bgColour :: String
   , deleting :: Boolean
@@ -54,7 +54,7 @@ data Action = DoNothing
 
 data Query a = Show Board a
 
-data Output = Updated BareBoardInfo
+data Output = Updated BoardInfoWithLabels
             | Deleted Id
 
 type Slots = ( label :: Label.Slot Id )

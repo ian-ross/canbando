@@ -4,7 +4,8 @@ module Server.Handler.Card
 
 import Prelude
 
-import HTTPure (ResponseM, ok)
+import HTTPure (ok)
+import Server.Env (ResponseM)
 
 
 newCard :: String -> String -> ResponseM
