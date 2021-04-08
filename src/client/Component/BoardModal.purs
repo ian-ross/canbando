@@ -9,7 +9,7 @@ import Canbando.Capability.IdSupply (class IdSupply, genId)
 import Canbando.Capability.Resource.Labels (class EditLabels, deleteLabel, updateLabel)
 import Canbando.Component.LabelEdit as Label
 import Canbando.Component.Modal (renderModal)
-import Canbando.Model.Board (Board, BoardInfo)
+import Canbando.Model.Board (Board, BoardInfo, Labels)
 import Canbando.Model.Id (Id)
 import Canbando.Model.Labels (LabelInfo)
 import Canbando.Util (dataBsDismiss)
@@ -23,13 +23,14 @@ import Halogen.HTML (button, details, div, form_, input, label, p, slot, summary
 import Halogen.HTML.Events (onClick, onKeyUp, onValueInput)
 import Halogen.HTML.Properties (ButtonType(..), InputType(..), class_, classes, for, id, ref, type_, value)
 import Type.Proxy (Proxy(..))
+import Type.Row (type (+))
 import Web.HTML.HTMLInputElement (fromHTMLElement, setValue)
 import Web.UIEvent.KeyboardEvent (KeyboardEvent, key)
 
 
-type BareBoardInfo = { | BoardInfo LabelInfo () }
+type BareBoardInfo = { | BoardInfo + Labels LabelInfo () }
 
-toBareBoardInfo :: forall row. { | BoardInfo LabelInfo row } -> BareBoardInfo
+toBareBoardInfo :: forall row. { | BoardInfo + Labels LabelInfo row } -> BareBoardInfo
 toBareBoardInfo { id, name, bgColour, labels } = { id, name, bgColour, labels }
 
 type State =

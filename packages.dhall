@@ -132,6 +132,50 @@ let additions =
       , repo = "https://github.com/ian-ross/purescript-localforage.git"
       , version = "psc-0.14.0"
       }
+  , mysql =
+      { dependencies =
+          [ "prelude"
+          , "aff"
+          , "simple-json"
+          , "js-date"
+          ]
+      , repo = "https://github.com/oreshinya/purescript-mysql.git"
+      , version = "v5.0.0"
+      }
+  , simple-json =
+      { dependencies =
+          [ "prelude"
+          , "typelevel-prelude"
+          , "record"
+          , "variant"
+          , "nullable"
+          , "foreign-object"
+          , "foreign"
+          , "exceptions"
+          , "arrays"
+          ]
+      , repo = "https://github.com/justinwoo/purescript-simple-json.git"
+      , version = "v8.0.0"
+      }
+  , httpure-middleware =
+      { dependencies =
+          [ "prelude"
+          , "ansi"
+          , "arrays"
+          , "console"
+          , "effect"
+          , "formatters"
+          , "foreign-object"
+          , "httpure"
+          , "integers"
+          , "maybe"
+          , "now"
+          , "parallel"
+          , "strings"
+          ]
+      , repo = "https://github.com/joneshf/purescript-httpure-middleware.git"
+      , version = "v4.0.1"
+      }
   }
 
 in  upstream // overrides // additions

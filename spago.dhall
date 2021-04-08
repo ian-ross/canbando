@@ -2,6 +2,7 @@
 , dependencies =
   [ "argonaut"
   , "bigints"
+  , "codec-argonaut"
   , "colors"
   , "console"
   , "debug"
@@ -9,7 +10,9 @@
   , "halogen"
   , "halogen-subscriptions"
   , "httpure"
+  , "httpure-middleware"
   , "localforage"
+  , "mysql"
   , "psci-support"
   , "remotedata"
   , "routing"
