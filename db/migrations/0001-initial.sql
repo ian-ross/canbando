@@ -16,7 +16,8 @@ CREATE TABLE board_labels (
 CREATE TABLE lists (
   id        VARCHAR(32)  PRIMARY KEY,
   board_id  VARCHAR(32)  REFERENCES boards(id) ON DELETE CASCADE,
-  name      TEXT         NOT NULL
+  name      TEXT         NOT NULL,
+  idx       INT          NOT NULL
 );
 
 CREATE TABLE cards (

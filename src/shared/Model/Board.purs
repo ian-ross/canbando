@@ -5,13 +5,14 @@ module Canbando.Model.Board
   , toBoard, toBoardStore
   , addListToBoard
   , boardInfoCodec, boardCreateInfoCodec
+  , boardNoDetailCodec, boardListDetailCodec
   ) where
 
 import Prelude
 
 import Canbando.Model.Id (Id)
-import Canbando.Model.Labels (LabelInfo)
-import Canbando.Model.List (List)
+import Canbando.Model.Labels (LabelInfo, labelInfoCodec)
+import Canbando.Model.List (List, ListNoDetail, listNoDetailCodec)
 import Data.Array (snoc)
 import Data.Codec.Argonaut (JsonCodec)
 import Data.Codec.Argonaut as CA
@@ -56,6 +57,13 @@ type BoardInfo = { | BoardInfoRep () }
 -- Concrete full board with labels and lists.
 type Board = BoardRep ()
 
+-- Board representation with only list IDs.
+type ListId = { id :: String }
+type BoardNoDetail = FullBoardRep LabelInfo ListId ()
+
+-- Board representation with list data, but cards as IDs only.
+type BoardListDetail = FullBoardRep LabelInfo ListNoDetail ()
+
 -- Concrete full board with labels and lists as IDs only.
 type BoardStore = FullBoardRep Id Id ()
 
@@ -93,4 +101,28 @@ boardInfoCodec =
     { id: CA.string
     , name: CA.string
     , bgColour: CA.string
+    }
+
+listIdCodec :: JsonCodec ListId
+listIdCodec =
+  CAR.object "ListId" { id: CA.string }
+
+boardNoDetailCodec :: JsonCodec BoardNoDetail
+boardNoDetailCodec =
+  CAR.object "BoardNoDetail"
+    { id: CA.string
+    , name: CA.string
+    , bgColour: CA.string
+    , labels: CA.array labelInfoCodec
+    , lists: CA.array listIdCodec
+    }
+
+boardListDetailCodec :: JsonCodec BoardListDetail
+boardListDetailCodec =
+  CAR.object "BoardListDetail"
+    { id: CA.string
+    , name: CA.string
+    , bgColour: CA.string
+    , labels: CA.array labelInfoCodec
+    , lists: CA.array listNoDetailCodec
     }

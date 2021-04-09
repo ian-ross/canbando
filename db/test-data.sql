@@ -8,11 +8,11 @@ VALUES
   ('T00000002', 'B00000001', 'label-2', '#00FF00'),
   ('T00000003', 'B00000001', 'label-3', '#0000FF');
 
-INSERT INTO lists(id, board_id, name)
+INSERT INTO lists(id, board_id, idx, name)
 VALUES
-  ('L00000001', 'B00000001', 'To Do'),
-  ('L00000002', 'B00000001', 'In Progress'),
-  ('L00000003', 'B00000001', 'Done');
+  ('L00000001', 'B00000001', 1, 'To Do'),
+  ('L00000002', 'B00000001', 2, 'In Progress'),
+  ('L00000003', 'B00000001', 3, 'Done');
 
 INSERT INTO cards(id, list_id, idx, title)
 VALUES

@@ -4,7 +4,6 @@ module Server.Handler.List
 
 import Prelude
 
-import Data.Maybe (Maybe)
 import HTTPure (ok)
 import Server.Env (ResponseM)
 import Server.Util (Detail)
@@ -14,7 +13,7 @@ newList :: String -> String -> ResponseM
 newList boardId body =
   ok $ "NEW LIST FOR " <> boardId
 
-getList :: String -> Maybe Detail -> ResponseM
+getList :: String -> Detail -> ResponseM
 getList listId detail =
   ok $ "GET LIST " <> listId <> " (detail=" <> show detail <> ")"
 

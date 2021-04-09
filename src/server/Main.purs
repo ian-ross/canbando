@@ -12,20 +12,20 @@ import Server.Env (Env, LogLevel(..), ResponseM, reader)
 import Server.Handler.Board (deleteBoard, getBoard, listBoards, newBoard, newLabel, updateBoard)
 import Server.Handler.Card (deleteCard, getCard, moveCard, newCard, updateCard)
 import Server.Handler.List (deleteList, getList, moveList, newList, updateList)
-import Server.Util (parseDetails)
+import Server.Util (withDetails)
 
 
 router :: Request -> ResponseM
 
 router {path: ["boards"],                    method: Post,  body} = newBoard body
 router {path: ["boards"],                    method: Get        } = listBoards
-router {path: ["boards", boardId], query,    method: Get        } = getBoard boardId (parseDetails query)
+router {path: ["boards", boardId], query,    method: Get        } = withDetails query $ getBoard boardId
 router {path: ["boards", boardId],           method: Patch, body} = updateBoard boardId body
 router {path: ["boards", boardId],           method: Delete     } = deleteBoard boardId
 router {path: ["boards", boardId, "labels"], method: Post,  body} = newLabel boardId body
 router {path: ["boards", boardId, "lists"],  method: Post,  body} = newList boardId body
 
-router {path: ["lists", listId], query,      method: Get        } = getList listId  (parseDetails query)
+router {path: ["lists", listId], query,      method: Get        } = withDetails query $ getList listId
 router {path: ["lists", listId],             method: Patch, body} = updateList listId body
 router {path: ["lists", listId],             method: Delete     } = deleteList listId
 router {path: ["lists", listId, "location"], method: Post,  body} = moveList listId body
