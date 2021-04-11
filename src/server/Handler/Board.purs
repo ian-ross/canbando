@@ -4,16 +4,14 @@ module Server.Handler.Board
 
 import Prelude
 
-import Canbando.Model.Board (BoardInfo, boardCreateInfoCodec, boardInfoCodec, boardListDetailCodec, boardNoDetailCodec)
-import Canbando.Model.Labels (LabelInfo)
-import Data.Codec.Argonaut as CA
-import Data.Traversable (for)
+import Canbando.Model.Board (boardCodec, boardCreateInfoCodec, boardInfoCodec, boardListDetailCodec, boardNoDetailCodec)
 import HTTPure (ok)
-import MySQL.Connection (execute, query, query_)
+import MySQL.Connection (execute)
 import MySQL.QueryValue (toQueryValue)
-import Server.Env (ResponseM)
-import Server.Handler (db, deleteEntity, genId, okJson, withJson)
-import Server.Util (Detail(..), single)
+import Server.DB as DB
+import Server.Env (ResponseM, db)
+import Server.Handler (deleteEntity, genId, jsonQuery, jsonsQuery, okJson, withJson)
+import Server.Util (Detail(..))
 
 
 newBoard :: String -> ResponseM
@@ -25,51 +23,21 @@ newBoard body = withJson body boardCreateInfoCodec \info -> do
   okJson boardInfoCodec board
 
 listBoards :: ResponseM
-listBoards = do
-  boards :: Array BoardInfo <- db $ query_
-    "SELECT id, name, bg_colour as bgColour FROM boards"
-  okJson (CA.array boardInfoCodec) boards
+listBoards = jsonsQuery DB.getBoards boardInfoCodec
 
 getBoard :: String -> Detail -> ResponseM
-getBoard id detail = do
-  boards <- db $ query
-    "SELECT id, name, bg_colour as bgColour FROM boards WHERE id = ?"
-      [toQueryValue id]
-  labels :: Array LabelInfo <- db $ query
-    "SELECT id, name, colour FROM board_labels WHERE board_id = ? ORDER BY name"
-      [toQueryValue id]
-  single boards \(bi :: BoardInfo) ->
-      case detail of
-        None -> do
-          lists :: Array { id :: String } <- db $ query
-            "SELECT id FROM lists WHERE board_id = ? ORDER BY idx"
-              [toQueryValue id]
-          let board = { id: bi.id, name: bi.name, bgColour: bi.bgColour
-                      , labels, lists }
-          okJson boardNoDetailCodec board
-        Lists -> do
-          ls :: Array { id :: String, name :: String } <- db $ query
-            "SELECT id, name FROM lists WHERE board_id = ? ORDER BY idx"
-              [toQueryValue id]
-          lists <- for ls \l -> do
-            cards :: Array { id :: String } <- db $ query
-              "SELECT id FROM cards WHERE list_id = ? ORDER BY idx"
-                [toQueryValue l.id]
-            pure { id: l.id, name: l.name, cards}
-          let board = { id: bi.id, name: bi.name, bgColour: bi.bgColour
-                      , labels, lists }
-          okJson boardListDetailCodec board
-        -- ==> TODO: DO THIS AFTER THE LIST RETRIEVAL STUFF IS DONE.
-        -- THIS SHOULD ALL BE REFACTORED TO PULL OUT DB ACCESS
-        -- FUNCTIONS.
-        All -> ok "NYI"
+getBoard boardId detail =
+  case detail of
+    All   -> jsonQuery (DB.getBoard boardId) boardCodec
+    Lists -> jsonQuery (DB.getBoardListDetail boardId) boardListDetailCodec
+    None  -> jsonQuery (DB.getBoardNoDetail boardId) boardNoDetailCodec
 
 updateBoard :: String -> String -> ResponseM
 updateBoard boardId body =
   ok $ "UPDATE BOARD " <> boardId
 
 deleteBoard :: String -> ResponseM
-deleteBoard id = deleteEntity "boards" id
+deleteBoard = deleteEntity "boards"
 
 newLabel :: String -> String -> ResponseM
 newLabel boardId body =

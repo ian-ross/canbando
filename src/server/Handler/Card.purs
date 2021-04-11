@@ -4,8 +4,11 @@ module Server.Handler.Card
 
 import Prelude
 
+import Canbando.Model.Card (cardCodec)
 import HTTPure (ok)
+import Server.DB as DB
 import Server.Env (ResponseM)
+import Server.Handler (deleteEntity, jsonQuery)
 
 
 newCard :: String -> String -> ResponseM
@@ -13,16 +16,14 @@ newCard listId body =
   ok $ "NEW CARD FOR " <> listId
 
 getCard :: String -> ResponseM
-getCard cardId =
-  ok $ "GET CARD " <> cardId
+getCard cardId = jsonQuery (DB.getCard cardId) cardCodec
 
 updateCard :: String -> String -> ResponseM
 updateCard cardId body =
   ok $ "UPDATE CARD " <> cardId
 
 deleteCard :: String -> ResponseM
-deleteCard cardId =
-  ok $ "DELETE CARD " <> cardId
+deleteCard = deleteEntity "cards"
 
 moveCard :: String -> String -> ResponseM
 moveCard cardId body =

@@ -4,9 +4,12 @@ module Server.Handler.List
 
 import Prelude
 
+import Canbando.Model.List (listCodec, listNoDetailCodec)
 import HTTPure (ok)
+import Server.DB as DB
 import Server.Env (ResponseM)
-import Server.Util (Detail)
+import Server.Handler (deleteEntity, jsonQuery)
+import Server.Util (Detail(..))
 
 
 newList :: String -> String -> ResponseM
@@ -15,11 +18,12 @@ newList boardId body =
 
 getList :: String -> Detail -> ResponseM
 getList listId detail =
-  ok $ "GET LIST " <> listId <> " (detail=" <> show detail <> ")"
+  case detail of
+    All -> jsonQuery (DB.getList listId) listCodec
+    _   -> jsonQuery (DB.getListNoDetail listId) listNoDetailCodec
 
 deleteList :: String -> ResponseM
-deleteList listId =
-  ok $ "DELETE LIST " <> listId
+deleteList = deleteEntity "lists"
 
 moveList :: String -> String -> ResponseM
 moveList listId body =

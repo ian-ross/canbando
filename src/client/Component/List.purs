@@ -15,7 +15,7 @@ import Canbando.Component.Icon (icon, iconButton)
 import Canbando.Env (Env)
 import Canbando.Model.Card (Card, CheckListItem)
 import Canbando.Model.Id (Id)
-import Canbando.Model.List (List, ListRep, toList)
+import Canbando.Model.List (FullListRep, List, toList)
 import Control.Monad.Reader.Trans (class MonadAsk)
 import Data.Array (deleteAt, filter, findIndex, insertAt)
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -35,7 +35,7 @@ type StateInfo =
   , editing :: Boolean
   , lastMoveLocal :: Boolean )
 
-type State = { | ListRep Card StateInfo }
+type State = FullListRep Card StateInfo
 
 data Output
   = ListDeleted Id

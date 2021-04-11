@@ -1,39 +1,33 @@
 module Server.Handler
-  ( log, db
-  , withJson, okJson
+  ( log
+  , withJson, okJson, jsonQuery, jsonsQuery
   , genId, deleteEntity
   ) where
 
 import Prelude
 
-import Control.Monad.Reader.Trans (class MonadAsk, ReaderT, asks)
+import Control.Monad.Reader.Trans (ReaderT)
 import Data.Argonaut (jsonParser, stringify)
 import Data.Array (head)
 import Data.Codec.Argonaut (JsonCodec, printJsonDecodeError)
 import Data.Codec.Argonaut as CA
 import Data.Either (Either(..))
-import Data.Maybe (fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Monoid (power)
 import Data.String (length)
 import Effect.Aff (Aff)
-import Effect.Aff.Class (class MonadAff, liftAff)
+import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Console as Console
-import HTTPure (badRequest, noContent, notFound, ok)
-import MySQL.Connection (Connection, query, query_)
-import MySQL.Pool (withPool)
-import MySQL.QueryValue (toQueryValue)
-import Server.Env (Env, ResponseM)
+import HTTPure (Response, badRequest, noContent, notFound, ok)
+import MySQL.Connection (query_)
+import Server.DB as DB
+import Server.Env (Env, ResponseM, db)
 
 log :: forall m. MonadEffect m => String -> m Unit
 log = liftEffect <<< Console.log
 
-db :: forall m a. MonadAff m => MonadAsk Env m => (Connection -> Aff a) -> m a
-db f = do
-  pool <- asks _.db
-  liftAff $ flip withPool pool f
-
-okJson :: forall t. JsonCodec t -> t -> ResponseM
+okJson :: forall m t. MonadAff m => JsonCodec t -> t -> m Response
 okJson codec val =  ok $ stringify $ CA.encode codec val
 
 withJson :: forall t. String -> JsonCodec t -> (t -> ResponseM) -> ResponseM
@@ -44,6 +38,14 @@ withJson body codec process =
       Left err -> badRequest $ printJsonDecodeError err
       Right info -> process info
 
+jsonQuery :: forall a. ReaderT Env Aff (Maybe a) -> JsonCodec a -> ResponseM
+jsonQuery q codec = q >>= case _ of
+  Nothing -> notFound
+  Just res -> okJson codec res
+
+jsonsQuery :: forall a. ReaderT Env Aff (Array a) -> JsonCodec a -> ResponseM
+jsonsQuery q codec = q >>= okJson (CA.array codec)
+
 genId :: String -> ReaderT Env Aff String
 genId prefix = do
   res :: Array { next :: Int } <- db (query_ "SELECT NEXT VALUE FOR idgen AS next")
@@ -53,6 +55,5 @@ genId prefix = do
 
 deleteEntity :: String -> String -> ResponseM
 deleteEntity table id = do
-  let sql = "DELETE FROM " <> table <> " WHERE id = ? RETURNING id"
-  deleted :: Array { id :: String } <- db $ query sql [toQueryValue id]
+  deleted <- DB.deleteEntity table id
   if deleted == [{ id }] then noContent else notFound

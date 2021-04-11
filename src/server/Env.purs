@@ -1,13 +1,17 @@
 module Server.Env
   ( Env(..), LogLevel(..), ResponseM
-  , reader
+  , reader, db
   ) where
 
-import Control.Monad.Reader.Trans (ReaderT, runReaderT)
+import Prelude
+
+import Control.Monad.Reader.Trans (class MonadAsk, ReaderT, asks, runReaderT)
 import Effect.Aff (Aff)
+import Effect.Aff.Class (class MonadAff, liftAff)
 import HTTPure (Response, Request)
 import HTTPure as HTTPure
-import MySQL.Pool (Pool)
+import MySQL.Connection (Connection)
+import MySQL.Pool (Pool, withPool)
 
 
 type ResponseM = ReaderT Env Aff Response
@@ -22,3 +26,8 @@ type Env =
 
 reader :: Env -> (Request -> ResponseM) -> Request -> HTTPure.ResponseM
 reader env r req = runReaderT (r req) env
+
+db :: forall m a. MonadAff m => MonadAsk Env m => (Connection -> Aff a) -> m a
+db f = do
+  pool <- asks _.db
+  liftAff $ flip withPool pool f

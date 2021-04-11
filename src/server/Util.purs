@@ -1,5 +1,5 @@
 module Server.Util
-  ( Detail(..), withDetails, single
+  ( Detail(..), withDetails
   ) where
 
 import Prelude
@@ -7,7 +7,7 @@ import Prelude
 import Data.Generic.Rep (class Generic)
 import Data.Maybe (Maybe(..))
 import Data.Show.Generic (genericShow)
-import HTTPure (Query, badRequest, internalServerError, notFound, (!?), (!@))
+import HTTPure (Query, badRequest, (!?), (!@))
 import Server.Env (ResponseM)
 
 
@@ -32,10 +32,3 @@ withDetails query f =
   case parseDetails query of
     Nothing -> badRequest "invalid details"
     Just details -> f details
-
-single :: forall a. Array a -> (a -> ResponseM) -> ResponseM
-single res f =
-  case res of
-    [x] -> f x
-    []  -> notFound
-    _   -> internalServerError "OOPS"
