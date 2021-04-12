@@ -4,16 +4,28 @@ module Server.Handler.Card
 
 import Prelude
 
-import Canbando.Model.Card (cardCodec)
-import HTTPure (ok)
+import Canbando.Model.Card (cardCodec, cardCreateInfoCodec)
+import HTTPure (notFound, ok)
+import MySQL.Connection (execute)
+import MySQL.QueryValue (toQueryValue)
+import Server.DB (getListInfo)
 import Server.DB as DB
-import Server.Env (ResponseM)
-import Server.Handler (deleteEntity, jsonQuery)
+import Server.Env (ResponseM, db)
+import Server.Handler (deleteEntity, genId, jsonQuery, okJson, withJson)
 
 
 newCard :: String -> String -> ResponseM
-newCard listId body =
-  ok $ "NEW CARD FOR " <> listId
+newCard listId body = withJson body cardCreateInfoCodec \info ->
+  getListInfo listId >>= case _ of
+    [_] -> do
+      newId <- genId "C"
+      db $ execute ("INSERT INTO cards SELECT ?, ?, ?, MAX(idx)+1 " <>
+                    "FROM cards WHERE list_id = ?")
+        [toQueryValue newId, toQueryValue listId,
+         toQueryValue info.title, toQueryValue listId]
+      let card = { id: newId, title: info.title, labels: [], checklist: [] }
+      okJson cardCodec card
+    _ -> notFound
 
 getCard :: String -> ResponseM
 getCard cardId = jsonQuery (DB.getCard cardId) cardCodec

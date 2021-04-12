@@ -3,6 +3,7 @@ module Canbando.Model.List
        , ListCreateInfoRep, ListInfoRep, FullListRep, ListCardsRep
        , ListRep, ListStore, ListNoDetail, CardId
        , encode, toList, toListStore
+       , listCreateInfoCodec, listInfoCodec
        , listNoDetailCodec, listCodec
        ) where
 

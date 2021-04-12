@@ -23,8 +23,8 @@ CREATE TABLE lists (
 CREATE TABLE cards (
   id       VARCHAR(32)  PRIMARY KEY,
   list_id  VARCHAR(32)  REFERENCES lists(id) ON DELETE CASCADE,
-  idx      INT          NOT NULL,
-  title    TEXT
+  title    TEXT,
+  idx      INT          NOT NULL
 );
 
 CREATE TABLE card_labels (

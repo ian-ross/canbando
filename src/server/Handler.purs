@@ -46,6 +46,7 @@ jsonQuery q codec = q >>= case _ of
 jsonsQuery :: forall a. ReaderT Env Aff (Array a) -> JsonCodec a -> ResponseM
 jsonsQuery q codec = q >>= okJson (CA.array codec)
 
+-- ==> TODO: FEISTEL CIPHER IDS HERE!
 genId :: String -> ReaderT Env Aff String
 genId prefix = do
   res :: Array { next :: Int } <- db (query_ "SELECT NEXT VALUE FOR idgen AS next")

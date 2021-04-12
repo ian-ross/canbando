@@ -1,7 +1,7 @@
 module Server.DB
   ( getBoards
-  , getBoardNoDetail, getBoardListDetail, getBoard
-  , getListNoDetail, getList
+  , getBoardNoDetail, getBoardListDetail, getBoard, getBoardInfo
+  , getListNoDetail, getList, getListInfo
   , getCard
   , deleteEntity
   ) where
