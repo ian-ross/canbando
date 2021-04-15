@@ -7,6 +7,7 @@ module Canbando.Model.Board
   , addListToBoard
   , boardInfoCodec, boardCreateInfoCodec
   , boardNoDetailCodec, boardListDetailCodec, boardCodec
+  , boardUpdateInfoCodec
   ) where
 
 import Prelude
@@ -51,6 +52,10 @@ type BoardRep row = FullBoardRep LabelInfo List row
 
 -- Concrete basic information needed for board creation.
 type BoardCreateInfo = { | BoardCreateInfoRep () }
+
+-- Concrete basic information needed for board updates.
+type BoardUpdateInfo = { | BoardCreateInfoRep () }
+
 
 -- Concrete basic board information.
 type BoardInfo = { | BoardInfoRep () }
@@ -136,4 +141,11 @@ boardCodec =
     , bgColour: CA.string
     , labels: CA.array labelInfoCodec
     , lists: CA.array listCodec
+    }
+
+boardUpdateInfoCodec :: JsonCodec BoardUpdateInfo
+boardUpdateInfoCodec =
+  CAR.object "BoardUpdateInfo"
+    { name: CA.string
+    , bgColour: CA.string
     }

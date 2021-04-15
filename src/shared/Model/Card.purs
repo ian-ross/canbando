@@ -1,8 +1,8 @@
 module Canbando.Model.Card
        ( Card, CardCreateInfo, CardInfo, CardStore, CheckListItem
-       , CardCreateInfoRep, CardInfoRep, CardRep
+       , CardCreateInfoRep, CardInfoRep, CardRep, CardUpdateInfo
        , encode, decode, toCard, toCardStore
-       , cardCreateInfoCodec, cardCodec
+       , cardCreateInfoCodec, cardCodec, cardUpdateInfoCodec
        ) where
 
 import Canbando.Model.Id (Id)
@@ -35,6 +35,10 @@ type CardCreateInfo = { | CardCreateInfoRep () }
 
 -- Basic card information.
 type CardInfo = { | CardInfoRep () }
+
+-- Card information for updates.
+type CardUpdateInfo =
+  { | CardCreateInfoRep ( labels :: Array Id, checklist :: Array CheckListItem ) }
 
 -- Full card information.
 type Card = { | CardRep () }
@@ -80,3 +84,11 @@ cardCodec =
     , labels: CA.array CA.string
     , checklist: CA.array checkListItemCodec
     }
+
+cardUpdateInfoCodec :: JsonCodec CardUpdateInfo
+cardUpdateInfoCodec =
+  CAR.object "CardUpdate"
+  { title: CA.string
+  , labels: CA.array CA.string
+  , checklist: CA.array checkListItemCodec
+  }

@@ -4,10 +4,11 @@ module Server.Handler.Board
 
 import Prelude
 
-import Canbando.Model.Board (boardCodec, boardCreateInfoCodec, boardInfoCodec, boardListDetailCodec, boardNoDetailCodec)
-import HTTPure (ok)
+import Canbando.Model.Board (boardCodec, boardCreateInfoCodec, boardInfoCodec, boardListDetailCodec, boardNoDetailCodec, boardUpdateInfoCodec)
+import HTTPure (notFound, ok)
 import MySQL.Connection (execute)
 import MySQL.QueryValue (toQueryValue)
+import Server.DB (getBoardInfo)
 import Server.DB as DB
 import Server.Env (ResponseM, db)
 import Server.Handler (deleteEntity, genId, jsonQuery, jsonsQuery, okJson, withJson)
@@ -33,8 +34,14 @@ getBoard boardId detail =
     None  -> jsonQuery (DB.getBoardNoDetail boardId) boardNoDetailCodec
 
 updateBoard :: String -> String -> ResponseM
-updateBoard boardId body =
-  ok $ "UPDATE BOARD " <> boardId
+updateBoard boardId body = withJson body boardUpdateInfoCodec \update ->
+  getBoardInfo boardId >>= case _ of
+    [_] -> do
+      db $ execute "UPDATE boards SET name = ?, bg_colour = ? WHERE id = ?"
+        [toQueryValue update.name, toQueryValue update.bgColour, toQueryValue boardId]
+      let board = { id: boardId, name: update.name, bgColour: update.bgColour }
+      okJson boardInfoCodec board
+    _ -> notFound
 
 deleteBoard :: String -> ResponseM
 deleteBoard = deleteEntity "boards"

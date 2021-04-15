@@ -4,11 +4,11 @@ module Server.Handler.List
 
 import Prelude
 
-import Canbando.Model.List (listCodec, listCreateInfoCodec, listInfoCodec, listNoDetailCodec)
+import Canbando.Model.List (listCodec, listCreateInfoCodec, listInfoCodec, listNoDetailCodec, listUpdateInfoCodec)
 import HTTPure (notFound, ok)
 import MySQL.Connection (execute)
 import MySQL.QueryValue (toQueryValue)
-import Server.DB (getBoardInfo)
+import Server.DB (getBoardInfo, getListInfo)
 import Server.DB as DB
 import Server.Env (ResponseM, db)
 import Server.Handler (deleteEntity, genId, jsonQuery, okJson, withJson)
@@ -42,5 +42,11 @@ moveList listId body =
   ok $ "MOVE LIST " <> listId
 
 updateList :: String -> String -> ResponseM
-updateList listId body =
-  ok $ "UPDATE LIST " <> listId
+updateList listId body = withJson body listUpdateInfoCodec \update ->
+  getListInfo listId >>= case _ of
+    [_] -> do
+      db $ execute "UPDATE lists SET name = ? WHERE id = ?"
+        [toQueryValue update.name, toQueryValue listId]
+      let list = { id: listId, name: update.name }
+      okJson listInfoCodec list
+    _ -> notFound

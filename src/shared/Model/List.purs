@@ -4,7 +4,7 @@ module Canbando.Model.List
        , ListRep, ListStore, ListNoDetail, CardId
        , encode, toList, toListStore
        , listCreateInfoCodec, listInfoCodec
-       , listNoDetailCodec, listCodec
+       , listNoDetailCodec, listCodec, listUpdateInfoCodec
        ) where
 
 import Prelude
@@ -43,6 +43,9 @@ type ListRep row = FullListRep Card row
 -- Concrete basic information needed for list creation.
 type ListCreateInfo = { | ListCreateInfoRep () }
 
+-- Concrete basic information needed for list updates.
+type ListUpdateInfo = { | ListCreateInfoRep () }
+
 -- Concrete basic list information.
 type ListInfo = { | ListInfoRep () }
 
@@ -69,6 +72,12 @@ encode { id, name, cards } = encodeJson { id, name, cards: map _.id cards }
 listCreateInfoCodec :: JsonCodec ListCreateInfo
 listCreateInfoCodec =
   CAR.object "ListCreateInfo"
+    { name: CA.string
+    }
+
+listUpdateInfoCodec :: JsonCodec ListUpdateInfo
+listUpdateInfoCodec =
+  CAR.object "ListUpdateInfo"
     { name: CA.string
     }
 
