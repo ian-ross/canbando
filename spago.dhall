@@ -1,6 +1,7 @@
 { name = "halogen-project"
 , dependencies =
-  [ "argonaut"
+  [ "affjax"
+  , "argonaut"
   , "bigints"
   , "codec-argonaut"
   , "colors"
