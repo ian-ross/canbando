@@ -9,8 +9,9 @@ import HTTPure.Middleware (developmentLogFormat)
 import MySQL.Connection (defaultConnectionInfo)
 import MySQL.Pool (Pool, createPool, defaultPoolInfo)
 import Server.Env (Env, LogLevel(..), ResponseM, reader)
-import Server.Handler.Board (deleteBoard, getBoard, listBoards, newBoard, newLabel, updateBoard)
+import Server.Handler.Board (deleteBoard, getBoard, listBoards, newBoard, updateBoard)
 import Server.Handler.Card (deleteCard, getCard, moveCard, newCard, updateCard)
+import Server.Handler.Labels (newLabel, deleteLabel, updateLabel)
 import Server.Handler.List (deleteList, getList, moveList, newList, updateList)
 import Server.Util (withDetails)
 
@@ -36,7 +37,10 @@ router {path: ["cards", cardId],             method: Patch, body} = updateCard c
 router {path: ["cards", cardId],             method: Delete     } = deleteCard cardId
 router {path: ["cards", cardId, "location"], method: Post,  body} = moveCard cardId body
 
-router _                                                            = notFound
+router {path: ["labels", labelId],           method: Delete     } = deleteLabel labelId
+router {path: ["labels", labelId],           method: Patch, body} = updateLabel labelId body
+
+router _                                                          = notFound
 
 
 main :: Effect Unit

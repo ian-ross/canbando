@@ -5,67 +5,74 @@ module Server.Handler.Card
 import Prelude
 
 import Canbando.Model.Card (cardCodec, cardCreateInfoCodec, cardUpdateInfoCodec)
-import Data.Array (mapWithIndex, sort)
-import HTTPure (notFound, ok)
-import MySQL.Connection (execute, query)
-import MySQL.QueryValue (toQueryValue)
-import Server.DB (getCardInfo, getListInfo)
-import Server.DB as DB
-import Server.Env (ResponseM, db, tx)
+import Canbando.Model.Id (Id)
+import Data.Array (sort)
+import Data.Codec.Argonaut (JsonCodec)
+import Data.Codec.Argonaut as CA
+import Data.Codec.Argonaut.Record as CAR
+import Data.Maybe (Maybe(..))
+import Data.Tuple.Nested ((/\))
+import HTTPure (noContent, notFound)
+import Server.DB.Card
+  (addCard, clearCardChecklist, clearCardLabels,
+   getCard, getCardChecklist, getCardInfo, getCardLabels,
+   setCardChecklist, setCardLabels, setCardTitle, moveCard) as DB
+import Server.DB.List (getListInfo) as DB
+import Server.Env (ResponseM, tx)
 import Server.Handler (deleteEntity, genId, jsonQuery, okJson, withJson)
 
 
 newCard :: String -> String -> ResponseM
 newCard listId body = withJson body cardCreateInfoCodec \info ->
-  getListInfo listId >>= case _ of
-    [_] -> do
+  DB.getListInfo listId >>= case _ of
+    Nothing -> notFound
+    Just li -> do
       newId <- genId "C"
-      db $ execute ("INSERT INTO cards SELECT ?, ?, ?, MAX(idx)+1 " <>
-                    "FROM cards WHERE list_id = ?")
-        [toQueryValue newId, toQueryValue listId,
-         toQueryValue info.title, toQueryValue listId]
+      DB.addCard listId newId info.title
       let card = { id: newId, title: info.title, labels: [], checklist: [] }
       okJson cardCodec card
-    _ -> notFound
 
 getCard :: String -> ResponseM
 getCard cardId = jsonQuery (DB.getCard cardId) cardCodec
 
 updateCard :: String -> String -> ResponseM
 updateCard cardId body = withJson body cardUpdateInfoCodec \update ->
-  getCardInfo cardId >>= case _ of
-    [_] -> do
+  DB.getCardInfo cardId >>= case _ of
+    Nothing -> notFound
+    Just ci -> do
       tx \conn -> do
-        execute "UPDATE cards SET title = ? WHERE id = ?"
-          [toQueryValue update.title, toQueryValue cardId] conn
-        labels :: Array { label_id :: String } <-
-          query "SELECT label_id FROM card_labels WHERE card_id = ?"
-            [toQueryValue cardId] conn
-        when (sort (map _.label_id labels) /= sort update.labels) do
-          execute "DELETE FROM card_labels WHERE card_id = ?"
-            [toQueryValue cardId] conn
-          execute "INSERT INTO card_labels (card_id, label_id) VALUES ?"
-            [toQueryValue $ update.labels <#>
-             \lab -> [toQueryValue cardId, toQueryValue lab]] conn
-        checklist :: Array { name :: String, done :: Boolean } <-
-          query "SELECT name, done FROM checklist_items WHERE card_id = ? ORDER BY idx"
-            [toQueryValue cardId] conn
+        DB.setCardTitle conn cardId update.title
+        labels <- DB.getCardLabels conn cardId
+        when (sort (map _.id labels) /= sort update.labels) do
+          DB.clearCardLabels conn cardId
+          DB.setCardLabels conn cardId update.labels
+        checklist <- DB.getCardChecklist conn cardId
         when (checklist /= update.checklist) do
-          execute "DELETE FROM checklist_items WHERE card_id = ?"
-            [toQueryValue cardId] conn
-          let conv idx check =
-                [toQueryValue cardId, toQueryValue idx,
-                 toQueryValue check.name, toQueryValue $ if check.done then 1 else 0]
-          execute "INSERT INTO checklist_items (card_id, idx, name, done) VALUES ?"
-            [toQueryValue $ mapWithIndex conv update.checklist] conn
+          DB.clearCardChecklist conn cardId
+          DB.setCardChecklist conn cardId update.checklist
       let card = { id: cardId, title: update.title
                  , labels: update.labels, checklist: update.checklist }
       okJson cardCodec card
-    _ -> notFound
 
 deleteCard :: String -> ResponseM
 deleteCard = deleteEntity "cards"
 
 moveCard :: String -> String -> ResponseM
-moveCard cardId body =
-  ok $ "MOVE CARD " <> cardId
+moveCard cardId body = withJson body cardLocationCodec \location -> do
+  mci <- DB.getCardInfo cardId
+  mli <- DB.getListInfo location.list_id
+  case mci /\ mli of
+    Just ci /\ Just li -> do
+      tx \conn -> do
+        DB.moveCard conn cardId li.id location.list_id location.index
+      noContent
+    _ -> notFound
+
+type CardLocationUpdate = { list_id :: Id, index :: Int }
+
+cardLocationCodec :: JsonCodec CardLocationUpdate
+cardLocationCodec =
+  CAR.object "CardLocationUpdate"
+    { list_id: CA.string
+    , index: CA.int
+    }

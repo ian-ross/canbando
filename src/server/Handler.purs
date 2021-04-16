@@ -21,7 +21,7 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Console as Console
 import HTTPure (Response, badRequest, noContent, notFound, ok)
 import MySQL.Connection (query_)
-import Server.DB as DB
+import Server.DB.Util (deleteEntity) as DB
 import Server.Env (Env, ResponseM, db)
 
 log :: forall m. MonadEffect m => String -> m Unit
